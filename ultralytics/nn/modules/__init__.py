@@ -58,6 +58,10 @@ from .block import (
     ResNetLayer,
     SCDown,
     TorchVision,
+    BiFPN,
+    BiFPNBlock,
+    DepthwiseConvBlock,
+    ConvBlock,
 )
 from .conv import (
     CBAM,
