@@ -65,7 +65,7 @@ from ultralytics.nn.modules import (
     v10Detect,
 )
 from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3
-from ultralytics.nn.modules.transformers import EMA
+from ultralytics.nn.modules.transformer import EMA
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
 from ultralytics.utils.loss import (
