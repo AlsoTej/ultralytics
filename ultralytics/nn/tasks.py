@@ -8,7 +8,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import torch
-
+from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3
 from ultralytics.nn.modules import (
     AIFI,
     C1,
@@ -1054,6 +1054,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is torch.nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
+            c2 = sum(ch[x] for x in f)
+        #BiFPN
+        elif m in [Concat, BiFPN_Concat2, BiFPN_Concat3]:
             c2 = sum(ch[x] for x in f)
         elif m in frozenset({Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}):
             args.append([ch[x] for x in f])
