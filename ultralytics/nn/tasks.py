@@ -1014,7 +1014,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
 
         }
     )
-       for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
+    for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
         m = (
             getattr(torch.nn, m[3:])
             if "nn." in m
