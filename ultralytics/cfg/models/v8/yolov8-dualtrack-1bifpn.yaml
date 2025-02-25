@@ -44,7 +44,7 @@ head:
 
   # Bottom-Up Pathway
   - [25, 1, DWConv, [256, 3, 2]]    # 26: Downsample
-  - [[-1, 22], 1, BiFPN_Concat3, [1]]    # 27: BiFPN Concatenate
+  - [[-1, 22], 1, BiFPN_Concat2, [1]]    # 27: BiFPN Concatenate
   - [-1, 1, C3k2, [512, True]]     # 28: C2f
 
   - [28, 1, DWConv, [512, 3, 2]]    # 29: Downsample
