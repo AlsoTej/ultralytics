@@ -64,6 +64,7 @@ from ultralytics.nn.modules import (
     WorldDetect,
     v10Detect,
 )
+from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
 from ultralytics.utils.loss import (
@@ -1006,6 +1007,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2fCIB,
             C2PSA,
             A2C2f,
+            BiFPN_Concat2,
+            BiFPN_Concat3,
         }
     )
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
@@ -1054,6 +1057,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is torch.nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
+            c2 = sum(ch[x] for x in f)
+        #Add bifpn_concat structure
+        elif m in [Concat, BiFPN_Concat2, BiFPN_Concat3]:
             c2 = sum(ch[x] for x in f)
         elif m in frozenset({Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}):
             args.append([ch[x] for x in f])
