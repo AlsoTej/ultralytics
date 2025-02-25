@@ -167,4 +167,5 @@ __all__ = (
     "A2C2f",
     "BiFPN_Concat2",
     "BiFPN_Concat3",
+    "EMA",
 )
