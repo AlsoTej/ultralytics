@@ -89,6 +89,7 @@ from .transformer import (
     TransformerBlock,
     TransformerEncoderLayer,
     TransformerLayer,
+    EMA,
 )
 
 __all__ = (
