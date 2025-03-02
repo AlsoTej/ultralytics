@@ -34,15 +34,15 @@ backbone:
 
 head:
 ############################################################################################BLOCK 1
-      # P6 from P5
-  - [19, 1, Conv, [256,3,2]]          # 21 (1, 256, 10, 10)
+    # P6 from P5
+  - [19, 1, DepthwiseConvBlock, [256,3,2]]          # 21 (1, 256, 10, 10)
   
-  # Generate P7 from P6 (ReLU + Downsampling)
-  - [21, 1, Conv, [256, 3, 2]]        # 22 (1, 256, 5, 5)
+    # Generate P7 from P6 (ReLU + Downsampling)
+  - [21, 1, DepthwiseConvBlock, [256, 3, 2]]        # 22 (1, 256, 5, 5)
 
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #23 Upsample A -> (1, 256, 10, 10)
   - [[-1, 21], 1, BiFPN_Concat2, [1]]          #24(1, 256, 10, 10)
-  - [-1, 1, DepthwiseConvBlock, [256, 3, 2]]   #25 (1, 256, 10, 10)
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #25 (1, 256, 10, 10)
 
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #26 Upsample -> (1, 256, 20, 20)
   - [[-1, 20], 1, BiFPN_Concat2, [1]]          #27 (1, 256, 20, 20)
