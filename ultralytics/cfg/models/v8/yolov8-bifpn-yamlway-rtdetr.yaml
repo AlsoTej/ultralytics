@@ -32,14 +32,14 @@ backbone:
   - [-1, 1, EMA, [2304]]  # 19 (1, 2304, 20, 20)
   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]  # 20 (1, 256, 20, 20) A - make channels same
 
-head:
-############################################################################################BLOCK 1
     # P6 from P5
   - [19, 1, DepthwiseConvBlock, [256,3,2]]          # 21 (1, 256, 10, 10)
   
     # Generate P7 from P6 (ReLU + Downsampling)
   - [21, 1, DepthwiseConvBlock, [256, 3, 2]]        # 22 (1, 256, 5, 5)
 
+head:
+############################################################################################BLOCK 1
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #23 Upsample A -> (1, 256, 10, 10)
   - [[-1, 21], 1, BiFPN_Concat2, [1]]          #24(1, 256, 10, 10)
   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #25 (1, 256, 10, 10)
@@ -122,7 +122,7 @@ head:
   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #82 (1, 256, 80, 80)
 
   - - [-1, 1, nn.Upsample, [None, 0.5, "nearest"]] #83 Downsample ->(1, 256, 40, 40)
-  - [[-1, 79, 61],1, BiFPN_Concat3, [1]]      #84 (1, 256, 40, 40)
+  - [[-1, 79, 61], 1, BiFPN_Concat3, [1]]      #84 (1, 256, 40, 40)
   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]  #85 (1, 256, 40, 40)
 
   - - [-1, 1, nn.Upsample, [None, 0.5, "nearest"]] #86 (1, 256, 20, 20)
