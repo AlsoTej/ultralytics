@@ -30,7 +30,7 @@ backbone:
   
   - [[4, 11], 1, Concat, [1]]  # 18 (1, 2304, 20, 20)  # Adjusted for EfficientNet-B3 output
   - [-1, 1, EMA, [2304]]  # 19 (1, 2304, 20, 20)
-  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]  # 20 (1, 384, 20, 20) A - make channels same
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]  # 20 (1, 256, 20, 20) A - make channels same
 
 head:
 ############################################################################################BLOCK 1
