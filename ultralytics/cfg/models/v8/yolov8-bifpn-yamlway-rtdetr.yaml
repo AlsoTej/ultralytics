@@ -20,102 +20,127 @@ backbone:
   - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]] #11 (1, 768, 20, 20)
 
   #concat
-  - [[2, 7], 1, Concat, [1]] # 12 (1, 384, 80, 80)
-  - [-1, 1, EMA, [384]] # 13 (1, 384, 80, 80)
-  - [-1, 1, Conv, [384, 1, 1]] #14 (1, 256, 80, 80) C - make channels same C3/P3
+  - [[2, 7], 1, Concat, [1]]   # 12 (1, 384, 80, 80)
+  - [-1, 1, EMA, [384]]        # 13 (1, 384, 80, 80)
+  - [-1, 1, Conv, [384, 3, 1]] #14 (1, 256, 80, 80) E - make channels same C3/P3
   
-  - [[3, 9], 1, Concat, [1]] # 15 (1, 768, 40, 40)
-  - [-1, 1, EMA, [768]] # 16 (1, 768, 40, 40)
-  - [-1, 1, Conv, [384, 1, 1]] #17 (1, 256, 40, 40) B - make channels same C4/P4
+  - [[3, 9], 1, Concat, [1]]   # 15 (1, 768, 40, 40)
+  - [-1, 1, EMA, [768]]        # 16 (1, 768, 40, 40)
+  - [-1, 1, Conv, [384, 3, 1]] #17 (1, 256, 40, 40) D - make channels same C4/P4
   
-  - [[4, 11], 1, Concat, [1]] # 18 (1, 1536, 20, 20)
-  - [-1, 1, EMA, [1536]] # 19 (1, 1536, 20, 20)
-  - [-1, 1, Conv, [384, 1, 1]] # 20 (1, 256, 20, 20) A - make channels same C5/P5
+  - [[4, 11], 1, Concat, [1]]  # 18 (1, 1536, 20, 20)
+  - [-1, 1, EMA, [1536]]       # 19 (1, 1536, 20, 20)
+  - [-1, 1, Conv, [384, 3, 1]] # 20 (1, 256, 20, 20) C - make channels same C5/P5
 
     # P6 from P5
-  - [-1, 1, DepthwiseConvBlock, [384,3,2]] # P6 from P5
+  - [-1, 1, DepthwiseConvBlock, [384,3,2]]     # 21 (1, 256, 10, 10)
   
   # Generate P7 from P6 (ReLU + Downsampling)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 2]]  # P7 from P6
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 2]]   # 22 (1, 256, 5, 5)
 
 head:
 ############################################################################################BLOCK 1
   
 
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #21 Upsample A -> (1, 256, 40, 40)
-  - [[17, -1], 1, BiFPN_Concat2, [1]] #22 AB (1, 256, 40, 40)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #23 (1, 256, 40, 40)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #23 Upsample A -> (1, 256, 10, 10)
+  - [[-1, 21], 1, BiFPN_Concat2, [1]]          #24(1, 256, 10, 10)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 2]]   #25 (1, 256, 10, 10)
 
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #24 Upsample -> (1, 256, 80, 80)
-  - [[-1, 14], 1, BiFPN_Concat2, [1]] #25 ABC = R (1, 256, 80, 80)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #26 (1, 256, 80, 80)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #26 Upsample -> (1, 256, 20, 20)
+  - [[-1, 20], 1, BiFPN_Concat2, [1]]          #27 (1, 256, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #28 (1, 256, 20, 20)
 
-  - [-1, 1, DWConv, [384, 3, 2]] #27 (1, 256, 40, 40)
-  - [[-1, 23, 17],1, BiFPN_Concat3, [1]] #28 ABC + AB + B = Q (1, 256, 40, 40)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #29 (1, 256, 40, 40)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #29 Upsample -> (1, 256, 40, 40)
+  - [[-1, 17], 1, BiFPN_Concat2, [1]]          #30 (1, 256, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #31 (1, 256, 40, 40)
 
-  - [-1, 1, DWConv, [384, 3, 2]] #30 (1, 256, 20, 20)
-  - [[-1, 20], 1, BiFPN_Concat2, [1]] #31 ABC + AB + B + A = P (1, 256, 20, 20)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #32 (1, 256, 20, 20)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #32 Upsample -> (1, 256, 80, 80)
+  - [[-1, 14], 1, BiFPN_Concat2, [1]]          #33 (1, 256, 80, 80)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #34 (1, 256, 80, 80)
+
+  - [-1, 1, DWConv, [384, 3, 2]]               #35 Downsample ->(1, 256, 40, 40)
+  - [[-1, 31, 17],1, BiFPN_Concat3, [1]]       #36 (1, 256, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #37 (1, 256, 40, 40)
+
+  - [-1, 1, DWConv, [384, 3, 2]]               #38 (1, 256, 20, 20)
+  - [[-1, 28, 20], 1, BiFPN_Concat3, [1]]      #39 (1, 256, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #40 (1, 256, 20, 20)
+
+  - [-1, 1, DWConv, [384, 3, 2]]               #41 (1, 256, 10, 10)
+  - [[-1, 25, 21], 1, BiFPN_Concat3, [1]]      #42 (1, 256, 10, 10)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #43 (1, 256, 10, 10)
+
+  - [-1, 1, DWConv, [384, 3, 2]]               #44 (1, 256, 5, 5)
+  - [[-1, 22], 1, BiFPN_Concat2, [1]]          #45 (1, 256, 5, 5)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #46 (1, 256, 5, 5)
 ##########################################################################################BLOCK2
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #33 (1, 256, 40, 40) 
-  - [[-1, 29], 1, BiFPN_Concat2, [1]] #34 PQ (1, 256, 40, 40)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #35 (1, 256, 40, 40)
+  
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #47 Upsample A -> (1, 256, 10, 10)
+  - [[-1, 43], 1, BiFPN_Concat2, [1]]          #48 (1, 256, 10, 10)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 2]]   #49 (1, 256, 10, 10)
 
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #36 (1, 256, 80, 80)
-  - [[-1, 26], 1, BiFPN_Concat2, [1]] #37 PQR = Z (1, 256, 80, 80)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #38 (1, 256, 80, 80)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #50 Upsample -> (1, 256, 20, 20)
+  - [[-1, 40], 1, BiFPN_Concat2, [1]]          #51 (1, 256, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #52 (1, 256, 20, 20)
 
-  - [-1, 1, DWConv, [384, 3, 2]] #39 (1, 256, 40, 40)
-  - [[-1, 35, 29], 1, BiFPN_Concat3, [1]] #40 PQR + PQ + Q = Y (1, 256, 40, 40)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #41 (1, 256, 40, 40)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #53 Upsample -> (1, 256, 40, 40)
+  - [[-1, 37], 1, BiFPN_Concat2, [1]]          #54 (1, 256, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #55 (1, 256, 40, 40)
 
-  - [-1, 1, DWConv, [384, 3, 2]] #42 (1, 256, 20, 20)
-  - [[-1, 32], 1, BiFPN_Concat2, [1]] #43 PQR + PQ + Q + P = X (1, 256, 20, 20)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #44 (1, 256, 20, 20)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #56 Upsample -> (1, 256, 80, 80)
+  - [[-1, 34], 1, BiFPN_Concat2, [1]]          #57 (1, 256, 80, 80)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #58 (1, 256, 80, 80)
+
+  - [-1, 1, DWConv, [384, 3, 2]]              #59 Downsample ->(1, 256, 40, 40)
+  - [[-1, 55, 37],1, BiFPN_Concat3, [1]]      #60 (1, 256, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #61 (1, 256, 40, 40)
+
+  - [-1, 1, DWConv, [384, 3, 2]]              #62 (1, 256, 20, 20)
+  - [[-1, 52, 40], 1, BiFPN_Concat3, [1]]     #63 (1, 256, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #64 (1, 256, 20, 20)
+
+  - [-1, 1, DWConv, [384, 3, 2]]              #65 (1, 256, 10, 10)
+  - [[-1, 49, 43], 1, BiFPN_Concat3, [1]]     #66 (1, 256, 10, 10)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #67 (1, 256, 10, 10)
+
+  - [-1, 1, DWConv, [384, 3, 2]]              #68 (1, 256, 5, 5)
+  - [[-1, 46], 1, BiFPN_Concat2, [1]]         #69 (1, 256, 5, 5)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #70 (1, 256, 5, 5)
 ##########################################################################################BLOCK3
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 45 (1, 256, 40, 40)
-  - [[-1, 41], 1, BiFPN_Concat2, [1]] # 46 XY (1, 256, 40, 40)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #47 (1, 256, 40, 40)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #71 Upsample A -> (1, 256, 10, 10)
+  - [[-1, 67], 1, BiFPN_Concat2, [1]]          #72 (1, 256, 10, 10)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 2]]   #73 (1, 256, 10, 10)
 
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #48 (1, 256, 80, 80)
-  - [[-1, 38], 1, BiFPN_Concat2, [1]] #49 XYZ (1, 256, 80 80)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #50 (1, 256, 80, 80)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #74 Upsample -> (1, 256, 20, 20)
+  - [[-1, 64], 1, BiFPN_Concat2, [1]]          #75 (1, 256, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #76 (1, 256, 20, 20)
 
-  - [-1, 1, DWConv, [384, 3, 2]] #51 (1, 256, 40, 40)
-  - [[-1, 47, 41], 1, BiFPN_Concat3, [1]] #52 XYZ + XY + Y (1, 256, 40, 40)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] # 53 (1, 256, 40, 40)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #77 Upsample -> (1, 256, 40, 40)
+  - [[-1, 61], 1, BiFPN_Concat2, [1]]          #78 (1, 256, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #79 (1, 256, 40, 40)
 
-  - [-1, 1, DWConv, [384, 3, 2]] #54 (1, 256, 20, 20)
-  - [[-1, 44], 1, BiFPN_Concat2, [1]] # 55 XYZ + XY + Y + X
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]] #56
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #80 Upsample -> (1, 256, 80, 80)
+  - [[-1, 58], 1, BiFPN_Concat2, [1]]          #81 (1, 256, 80, 80)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]   #82 (1, 256, 80, 80)
 
+  - [-1, 1, DWConv, [384, 3, 2]]              #83 Downsample ->(1, 256, 40, 40)
+  - [[-1, 79, 61],1, BiFPN_Concat3, [1]]      #84 (1, 256, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #85 (1, 256, 40, 40)
+
+  - [-1, 1, DWConv, [384, 3, 2]]              #86 (1, 256, 20, 20)
+  - [[-1, 76, 64], 1, BiFPN_Concat3, [1]]     #87 (1, 256, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #88 (1, 256, 20, 20)
+
+  - [-1, 1, DWConv, [384, 3, 2]]              #89 (1, 256, 10, 10)
+  - [[-1, 73, 67], 1, BiFPN_Concat3, [1]]     #90 (1, 256, 10, 10)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #91 (1, 256, 10, 10)
+
+  - [-1, 1, DWConv, [384, 3, 2]]              #92 (1, 256, 5, 5)
+  - [[-1, 70], 1, BiFPN_Concat2, [1]]         #92 (1, 256, 5, 5)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #94 (1, 256, 5, 5)
+
+  
   # - [53, 1, C3k2, [512, True]] #57
   # - [56, 1, C3k2, [1024, True]] #58
 
-  - [[50,53,56], 1, RTDETRDecoder, [nc]]  # Pass P3, P4, P5 to Detect head (index 32) 25
-  # - [[50,57,58], 1, RTDETRDecoder, [nc]]  # Pass P3, P4, P5 to Detect head (index 32) 25
-  
-
-# head:
-# # Top-Down Pathway
-#   - [19, 1, nn.Upsample, [None, 2, "nearest"]]  # Upsample EMA3 to match Scale 2 (index 20) 
-#   - [[-1, 17], 1, Concat, [1]]                 # Concatenate EMA3 (upsampled) + EMA2 (index 21) 
-#   - [-1, 1, C3k2, [512, False]]                # Apply C3k2 on concatenated features (index 22) 
-
-#   - [22, 1, nn.Upsample, [None, 2, "nearest"]]  # Upsample to match Scale 1 (index 23) 
-#   - [[-1, 15], 1, Concat, [1]]                 # Concatenate with EMA1 (index 24) 
-#   - [-1, 1, C3k2, [256, False]]                # Apply C3k2 on concatenated features (index 25) 
-
-#   # Bottom-Up Pathway
-#   - [25, 1, DWConv, [256, 3, 2]]    # Downsample Scale 1 (index 26) 24
-#   - [[-1, 22], 1, Concat, [1]]    # Concatenate (Scale 1 -> Scale 2) (index 27) 25
-#   - [-1, 1, C3k2, [512, False]]   # Apply C3k2 (index 28) 26
-
-#   - [28, 1, DWConv, [512, 3, 2]]    # Downsample Scale 2 (index 29) 27
-#   - [[-1, 19], 1, Concat, [1]]    # Concatenate with EMA3 (Scale 3) (index 30) 28
-#   - [-1, 1, C3k2, [1024, False]]  # Apply C3k2 (index 31) 29
-
-#   # Detection
-#   # - [[23, 26, 29], 1, Detect, [nc]]  # Pass P3, P4, P5 to Detect head (index 32) 30
-#   - [[25, 28, 31], 1, RTDETRDecoder, [nc]]  # Pass P3, P4, P5 to Detect head (index 32) 30
+  - [[82,85,88,91,94], 1, RTDETRDecoder, [nc]]  # Pass P3, P4, P5, P6, P7 to Detect head (index 32) 25
