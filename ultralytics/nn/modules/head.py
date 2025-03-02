@@ -371,8 +371,8 @@ class RTDETRDecoder(nn.Module):
 
     def __init__(
         self,
-        nc=80,
-        ch=(512, 1024, 2048),
+        nc=2,
+        ch=(256, 256, 256, 256, 256),
         hd=256,  # hidden dim
         nq=300,  # num queries
         ndp=4,  # num decoder points
@@ -409,6 +409,11 @@ class RTDETRDecoder(nn.Module):
             learnt_init_query (bool): Whether to learn initial query embeddings. Default is False.
         """
         super().__init__()
+            if not isinstance(ch, (list, tuple)) or len(ch) < 1:
+                raise ValueError(f"ch must be a non-empty list or tuple, got {ch}")
+            for c in ch:
+                if not isinstance(c, int) or c <= 0:
+                    raise ValueError(f"Channel dimensions must be positive integers, got {ch}")
         self.hidden_dim = hd
         self.nhead = nh
         self.nl = len(ch)  # num level
