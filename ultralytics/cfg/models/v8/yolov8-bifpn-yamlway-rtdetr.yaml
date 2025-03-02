@@ -143,4 +143,4 @@ head:
   # - [53, 1, C3k2, [512, True]] #57
   # - [56, 1, C3k2, [1024, True]] #58
 
-  - [[82,85,88,91,94], 1, RTDETRDecoder, [nc]]  # Pass P3, P4, P5, P6, P7 to Detect head (index 32) 25
+  - [[82, 85, 88, 91, 94], 1, RTDETRDecoder, [nc, [256, 256, 256, 256, 256]]]  # Pass P3, P4, P5, P6, P7 to Detect head (index 32) 25
