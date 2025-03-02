@@ -32,14 +32,15 @@ backbone:
   - [-1, 1, EMA, [1536]] # 19 (1, 1536, 20, 20)
   - [-1, 1, Conv, [384, 1, 1]] # 20 (1, 256, 20, 20) A - make channels same C5/P5
 
-head:
-############################################################################################BLOCK 1
-     # P6 from P5
+       # P6 from P5
   - [-1,1,DepthwiseConvBlock,[384,3,2]] # P6 from P5
   
   # Generate P7 from P6 (ReLU + Downsampling)
   - [-1, 1, ReLU]  # Apply ReLU before Conv
   - [-1, 1, ConvBlock, [384, 3, 2]]  # P7 from P6
+
+head:
+############################################################################################BLOCK 1
   
 
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #21 Upsample A -> (1, 256, 40, 40)
