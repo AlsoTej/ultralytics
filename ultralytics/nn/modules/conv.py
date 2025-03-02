@@ -44,7 +44,7 @@ class DepthwiseConvBlock(nn.Module):
         x = self.pointwise(x)
         x = self.bn(x)
         return self.act(x)
-
+        
 # Combine with BiFPN to set learnable parameters and learn the weights of different branches
 # Two branches concat operation
 class BiFPN_Concat2(nn.Module):
@@ -61,7 +61,6 @@ class BiFPN_Concat2(nn.Module):
         # x = [weight[0] * x[0], weight[1] * x[1]]
         # return torch.cat(x, self.d)
         return weight[0] * x[0] + weight[1] * x[1]
-
 
 # Three branches concat operation
 class BiFPN_Concat3(nn.Module):
