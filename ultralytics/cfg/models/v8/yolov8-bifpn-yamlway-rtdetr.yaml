@@ -5,32 +5,32 @@ backbone:
   - [-1, 1, nn.Identity, []] #0
 
  # CNN Backbone (EfficientNet-B3)
-- [0, 1, TorchVision, [1536, "efficientnet_b3", "DEFAULT", True, 2, True]]  # - 1
-- [-1, 1, Index, [48, 4]]  # (1, 48, 80, 80) - 2
-- [1, 1, Index, [96, 6]]  # (1, 96, 40, 40) - 3
-- [1, 1, Index, [1536, 9]]  # (1, 1536, 20, 20) - 4
-
-# Swin track
-- [0, 1, TorchVision, [768, "swin_t", "DEFAULT", True, 4, True]] #5
-- [-1, 1, Index, [48 ,4]]  #6
-- [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]]  #7 (1, 48, 80, 80)
-- [5, 1, Index, [96, 6]]  #8
-- [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]]  #9 (1, 96, 40, 40)
-- [5, 1, Index, [768, 9]]  #10
-- [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]]  #11 (1, 768, 20, 20)
-
-# Concat & Processing
-- [[2, 7], 1, Concat, [1]]  # 12 (1, 96, 80, 80)
-- [-1, 1, EMA, [96]]  # 13 (1, 96, 80, 80)
-- [-1, 1, DepthwiseConvBlock, [96, 3, 1]]  #14 (1, 96, 80, 80) C - make channels same
-
-- [[3, 9], 1, Concat, [1]]  # 15 (1, 192, 40, 40)
-- [-1, 1, EMA, [192]]  # 16 (1, 192, 40, 40)
-- [-1, 1, DepthwiseConvBlock, [96, 3, 1]]  #17 (1, 96, 40, 40) B - make channels same
-
-- [[4, 11], 1, Concat, [1]]  # 18 (1, 2304, 20, 20)  # Adjusted for EfficientNet-B3 output
-- [-1, 1, EMA, [2304]]  # 19 (1, 2304, 20, 20)
-- [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  # 20 (1, 384, 20, 20) A - make channels same
+  - [0, 1, TorchVision, [1536, "efficientnet_b3", "DEFAULT", True, 2, True]]  # - 1
+  - [-1, 1, Index, [48, 4]]  # (1, 48, 80, 80) - 2
+  - [1, 1, Index, [96, 6]]  # (1, 96, 40, 40) - 3
+  - [1, 1, Index, [1536, 9]]  # (1, 1536, 20, 20) - 4
+  
+  # Swin track
+  - [0, 1, TorchVision, [768, "swin_t", "DEFAULT", True, 4, True]] #5
+  - [-1, 1, Index, [48 ,4]]  #6
+  - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]]  #7 (1, 48, 80, 80)
+  - [5, 1, Index, [96, 6]]  #8
+  - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]]  #9 (1, 96, 40, 40)
+  - [5, 1, Index, [768, 9]]  #10
+  - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]]  #11 (1, 768, 20, 20)
+  
+  # Concat & Processing
+  - [[2, 7], 1, Concat, [1]]  # 12 (1, 96, 80, 80)
+  - [-1, 1, EMA, [96]]  # 13 (1, 96, 80, 80)
+  - [-1, 1, DepthwiseConvBlock, [96, 3, 1]]  #14 (1, 96, 80, 80) C - make channels same
+  
+  - [[3, 9], 1, Concat, [1]]  # 15 (1, 192, 40, 40)
+  - [-1, 1, EMA, [192]]  # 16 (1, 192, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [96, 3, 1]]  #17 (1, 96, 40, 40) B - make channels same
+  
+  - [[4, 11], 1, Concat, [1]]  # 18 (1, 2304, 20, 20)  # Adjusted for EfficientNet-B3 output
+  - [-1, 1, EMA, [2304]]  # 19 (1, 2304, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  # 20 (1, 384, 20, 20) A - make channels same
 
 head:
 ############################################################################################BLOCK 1
