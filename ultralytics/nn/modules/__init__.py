@@ -74,6 +74,7 @@ from .conv import (
     LightConv,
     RepConv,
     SpatialAttention,
+    DepthwiseConvBlock,
     BiFPN_Concat2,
     BiFPN_Concat3,
 )
