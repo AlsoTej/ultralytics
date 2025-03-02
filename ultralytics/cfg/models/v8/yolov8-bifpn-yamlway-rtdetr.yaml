@@ -12,31 +12,31 @@ backbone:
   
   # Swin track
   - [0, 1, TorchVision, [768, swin_t, DEFAULT, True, 4, True]] #5
-  - [-1, 1, Index, [192 ,4]] #6
+  - [-1, 1, Index, [192 ,4]]                         #6
   - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]] #7 (1, 192, 80, 80)
-  - [5, 1, Index, [384, 6]] #8
+  - [5, 1, Index, [384, 6]]                          #8
   - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]] #9 (1, 384, 40, 40)
-  - [5, 1, Index, [768, 9]] #10
+  - [5, 1, Index, [768, 9]]                          #10
   - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]] #11 (1, 768, 20, 20)
 
   #concat
-  - [[2, 7], 1, Concat, [1]]   # 12 (1, 384, 80, 80)
-  - [-1, 1, EMA, [384]]        # 13 (1, 384, 80, 80)
-  - [-1, 1, Conv, [384, 3, 1]] #14 (1, 256, 80, 80) E - make channels same C3/P3
+  - [[2, 7], 1, Concat, [1]]                        # 12 (1, 384, 80, 80)
+  - [-1, 1, EMA, [384]]                             # 13 (1, 384, 80, 80)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]        # 14 (1, 256, 80, 80) E - make channels same C3/P3
   
-  - [[3, 9], 1, Concat, [1]]   # 15 (1, 768, 40, 40)
-  - [-1, 1, EMA, [768]]        # 16 (1, 768, 40, 40)
-  - [-1, 1, Conv, [384, 3, 1]] #17 (1, 256, 40, 40) D - make channels same C4/P4
+  - [[3, 9], 1, Concat, [1]]                        # 15 (1, 768, 40, 40)
+  - [-1, 1, EMA, [768]]                             # 16 (1, 768, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]        # 17 (1, 256, 40, 40) D - make channels same C4/P4
   
-  - [[4, 11], 1, Concat, [1]]  # 18 (1, 1536, 20, 20)
-  - [-1, 1, EMA, [1536]]       # 19 (1, 1536, 20, 20)
-  - [-1, 1, Conv, [384, 3, 1]] # 20 (1, 256, 20, 20) C - make channels same C5/P5
+  - [[4, 11], 1, Concat, [1]]                       # 18 (1, 1536, 20, 20)
+  - [-1, 1, EMA, [1536]]                            # 19 (1, 1536, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]        # 20 (1, 256, 20, 20) C - make channels same C5/P5
 
     # P6 from P5
-  - [-1, 1, DepthwiseConvBlock, [384,3,2]]     # 21 (1, 256, 10, 10)
+  - [20, 1, DepthwiseConvBlock, [384,3,2]]          # 21 (1, 256, 10, 10)
   
   # Generate P7 from P6 (ReLU + Downsampling)
-  - [-1, 1, DepthwiseConvBlock, [384, 3, 2]]   # 22 (1, 256, 5, 5)
+  - [21, 1, DepthwiseConvBlock, [384, 3, 2]]        # 22 (1, 256, 5, 5)
 
 head:
 ############################################################################################BLOCK 1
@@ -136,7 +136,7 @@ head:
   - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #91 (1, 256, 10, 10)
 
   - [-1, 1, DWConv, [384, 3, 2]]              #92 (1, 256, 5, 5)
-  - [[-1, 70], 1, BiFPN_Concat2, [1]]         #92 (1, 256, 5, 5)
+  - [[-1, 70], 1, BiFPN_Concat2, [1]]         #93 (1, 256, 5, 5)
   - [-1, 1, DepthwiseConvBlock, [384, 3, 1]]  #94 (1, 256, 5, 5)
 
   
