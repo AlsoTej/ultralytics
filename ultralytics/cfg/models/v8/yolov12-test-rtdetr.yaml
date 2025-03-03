@@ -40,9 +40,9 @@ backbone:
   - [0, 1, TorchVision, [768, swin_v2_t, DEFAULT, True, 4, True]] #12
   - [-1, 1, Index, [192 ,4]]                         #13
   - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]] #14 (1, 192, 80, 80)
-  - [5, 1, Index, [384, 6]]                          #15
+  - [12, 1, Index, [384, 6]]                          #15
   - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]] #16 (1, 384, 40, 40)
-  - [5, 1, Index, [768, 9]]                          #17
+  - [12, 1, Index, [768, 9]]                          #17
   - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]] #18 (1, 768, 20, 20)
 
   #concat
