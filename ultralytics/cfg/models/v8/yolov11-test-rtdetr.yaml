@@ -64,7 +64,7 @@ head:
   - [25, 1, DepthwiseConvBlock, [256,3,2]]          # 26 (1, 256, 10, 10)
   
     # Generate P7 from P6 (ReLU + Downsampling)
-  - [2, 1, DepthwiseConvBlock, [256, 3, 2]]        # 27 (1, 256, 5, 5)
+  - [26, 1, DepthwiseConvBlock, [256, 3, 2]]        # 27 (1, 256, 5, 5)
 
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #28 Upsample A -> (1, 256, 10, 10)
   - [[-1, 26], 1, BiFPN_Concat2, [1]]          #29(1, 256, 10, 10)
