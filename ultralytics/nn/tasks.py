@@ -65,6 +65,15 @@ from ultralytics.nn.modules import (
     v10Detect,
     EMA,
     DepthwiseConvBlock,
+    DWBottleneck,
+    C2fGhost,
+    C3k2Ghost,
+    C3kGhost,
+    DWC2f,
+    DWC3k2,
+    DWC3k,
+    DWBottleneck,
+
 
 )
 from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, DepthwiseConvBlock
@@ -990,9 +999,17 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             PSA,
             SCDown,
             C2fCIB,
-            A2C2f,
             EMA,
             DepthwiseConvBlock,
+            DWC2f,
+            DWBottleneck,
+            C2fGhost,
+            C3k2Ghost,
+            C3kGhost,
+            DWC2f,
+            DWC3k2,            
+            DWC3k,
+            DWBottleneck,
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1011,9 +1028,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2fPSA,
             C2fCIB,
             C2PSA,
-            A2C2f,
             BiFPN_Concat2,
             BiFPN_Concat3,
+            DWC3k2,
         }
     )
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
@@ -1029,6 +1046,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 with contextlib.suppress(ValueError):
                     args[j] = locals()[a] if a in locals() else ast.literal_eval(a)
         n = n_ = max(round(n * depth), 1) if n > 1 else n  # depth gain
+        
         if m in base_modules:
             c1, c2 = ch[f], args[0]
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
@@ -1036,7 +1054,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             if m is C2fAttn:  # set 1) embed channels and 2) num heads
                 args[1] = make_divisible(min(args[1], max_channels // 2) * width, 8)
                 args[2] = int(max(round(min(args[2], max_channels // 2 // 32)) * width, 1) if args[2] > 1 else args[2])
-
+    
             args = [c1, c2, *args[1:]]
             if m in repeat_modules:
                 args.insert(2, n)  # number of repeats
@@ -1045,10 +1063,6 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 legacy = False
                 if scale in "mlx":
                     args[3] = True
-            if m is A2C2f:
-                legacy = False
-                if scale in "lx":  # for L/X sizes
-                    args.extend((True, 1.2))
         elif m is AIFI:
             args = [ch[f], *args]
         elif m in frozenset({HGStem, HGBlock}):
@@ -1065,10 +1079,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = sum(ch[x] for x in f)
         #Add bifpn_concat structure
         # elif m in [Concat, BiFPN_Concat2, BiFPN_Concat3]:
-        #     c2 = sum(ch[x] for x in f)
+            # c2 = sum(ch[x] for x in f)
         elif m in [BiFPN_Concat2, BiFPN_Concat3]:
             c2 = ch[f[0]]
-
         elif m in frozenset({Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}):
             args.append([ch[x] for x in f])
             if m is Segment:
