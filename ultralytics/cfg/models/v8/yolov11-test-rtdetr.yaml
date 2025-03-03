@@ -54,7 +54,7 @@ backbone:
   - [-1, 1, EMA, [896]]                             # 23 (1, 896, 40, 40)
   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]        # 24 (1, 256, 40, 40) D - make channels same C4/P4
   
-  - [[11, 18], 1, Concat, [1]]                       # 25 (1, 1792, 20, 20)
+  - [[10, 18], 1, Concat, [1]]                       # 25 (1, 1792, 20, 20)
   - [-1, 1, EMA, [1792]]                            # 26 (1, 1792, 20, 20)
   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]        # 27 (1, 256, 20, 20) C - make channels same C5/P5
 
