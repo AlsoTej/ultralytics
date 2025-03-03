@@ -5,13 +5,13 @@ backbone:
   - [-1, 1, nn.Identity, []] #0
 
   #CNN
-  - [0, 1, TorchVision, [1536, "efficientnet_b3", "DEFAULT", True, 2, True]]  # - 1
+  - [0, 1, TorchVision, [1536, "efficientnet_b3", "DEFAULT", True, 0, True]]  # - 1
   - [-1, 1, Index, [48, 4]]  #  (1, 48, 80, 80) - 2
   - [1, 1, Index, [136, 6]]  # (1, 136, 40, 40) - 3
   - [1, 1, Index, [1536, 9]]  #  (1, 1536, 20, 20) - 4
   
   # Swin track
-  - [0, 1, TorchVision, [768, swin_t, DEFAULT, True, 4, True]] #5
+  - [0, 1, TorchVision, [768, swin_t, DEFAULT, True, 2, True]] #5
   - [-1, 1, Index, [192 ,4]]                         #6
   - [-1, 1, torchvision.ops.Permute, [[0, 3, 1, 2]]] #7 (1, 192, 80, 80)
   - [5, 1, Index, [384, 6]]                          #8
