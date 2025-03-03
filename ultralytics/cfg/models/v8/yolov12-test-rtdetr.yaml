@@ -60,43 +60,43 @@ backbone:
 
 head:
 ############################################################################################BLOCK 1
-#     # P6 from P5
-#   - [19, 1, DepthwiseConvBlock, [256,3,2]]          # 21 (1, 256, 10, 10)
+    # P6 from P5
+  - [27, 1, DepthwiseConvBlock, [256,3,2]]          # 28 (1, 256, 10, 10)
   
-#     # Generate P7 from P6 (ReLU + Downsampling)
-#   - [21, 1, DepthwiseConvBlock, [256, 3, 2]]        # 22 (1, 256, 5, 5)
+    # Generate P7 from P6 (ReLU + Downsampling)
+  - [28, 1, DepthwiseConvBlock, [256, 3, 2]]        # 29 (1, 256, 5, 5)
 
-#   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #23 Upsample A -> (1, 256, 10, 10)
-#   - [[-1, 21], 1, BiFPN_Concat2, [1]]          #24(1, 256, 10, 10)
-#   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #25 (1, 256, 10, 10)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #30 Upsample A -> (1, 256, 10, 10)
+  - [[-1, 28], 1, BiFPN_Concat2, [1]]          #31(1, 256, 10, 10)
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #32 (1, 256, 10, 10)
 
-#   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #26 Upsample -> (1, 256, 20, 20)
-#   - [[-1, 20], 1, BiFPN_Concat2, [1]]          #27 (1, 256, 20, 20)
-#   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #28 (1, 256, 20, 20)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #33 Upsample -> (1, 256, 20, 20)
+  - [[-1, 27], 1, BiFPN_Concat2, [1]]          #34 (1, 256, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #35 (1, 256, 20, 20)
 
-#   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #29 Upsample -> (1, 256, 40, 40)
-#   - [[-1, 17], 1, BiFPN_Concat2, [1]]          #30 (1, 256, 40, 40)
-#   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #31 (1, 256, 40, 40)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #36 Upsample -> (1, 256, 40, 40)
+  - [[-1, 24], 1, BiFPN_Concat2, [1]]          #37 (1, 256, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #38 (1, 256, 40, 40)
 
-#   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #32 Upsample -> (1, 256, 80, 80)
-#   - [[-1, 14], 1, BiFPN_Concat2, [1]]          #33 (1, 256, 80, 80)
-#   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #34 (1, 256, 80, 80)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #39 Upsample -> (1, 256, 80, 80)
+  - [[-1, 21], 1, BiFPN_Concat2, [1]]          #40 (1, 256, 80, 80)
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #41 (1, 256, 80, 80)
 
-#   - [-1, 1, DWConv, [256, 3, 2]]               #35 Downsample ->(1, 256, 40, 40)
-#   - [[-1, 31, 17],1, BiFPN_Concat3, [1]]       #36 (1, 256, 40, 40)
-#   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #37 (1, 256, 40, 40)
+  - [-1, 1, DWConv, [256, 3, 2]]               #42 Downsample ->(1, 256, 40, 40)
+  - [[-1, 38, 24],1, BiFPN_Concat3, [1]]       #43 (1, 256, 40, 40)
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #44 (1, 256, 40, 40)
 
-#   - [-1, 1, DWConv, [256, 3, 2]]               #38 (1, 256, 20, 20)
-#   - [[-1, 28, 20], 1, BiFPN_Concat3, [1]]      #39 (1, 256, 20, 20)
-#   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #40 (1, 256, 20, 20)
+  - [-1, 1, DWConv, [256, 3, 2]]               #45 (1, 256, 20, 20)
+  - [[-1, 35, 27], 1, BiFPN_Concat3, [1]]      #46 (1, 256, 20, 20)
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #47 (1, 256, 20, 20)
 
-#   - [-1, 1, DWConv, [256, 3, 2]]               #41 (1, 256, 10, 10)
-#   - [[-1, 25, 21], 1, BiFPN_Concat3, [1]]      #42 (1, 256, 10, 10)
-#   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #43 (1, 256, 10, 10)
+  - [-1, 1, DWConv, [256, 3, 2]]               #48 (1, 256, 10, 10)
+  - [[-1, 32, 28], 1, BiFPN_Concat3, [1]]      #49 (1, 256, 10, 10)
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #50 (1, 256, 10, 10)
 
-#   - [-1, 1, DWConv, [256, 3, 2]]               #44 (1, 256, 5, 5)
-#   - [[-1, 22], 1, BiFPN_Concat2, [1]]          #45 (1, 256, 5, 5)
-#   - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #46 (1, 256, 5, 5)
+  - [-1, 1, DWConv, [256, 3, 2]]               #51 (1, 256, 5, 5)
+  - [[-1, 29], 1, BiFPN_Concat2, [1]]          #52 (1, 256, 5, 5)
+  - [-1, 1, DepthwiseConvBlock, [256, 3, 1]]   #53 (1, 256, 5, 5)
 # # #########################################################################################BLOCK2
   
 #   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #47 Upsample A -> (1, 256, 10, 10)
@@ -167,4 +167,4 @@ head:
   # - [53, 1, C3k2, [512, True]] #57
   # - [56, 1, C3k2, [1024, True]] #58
 
-  - [[21, 24, 27], 1, RTDETRDecoder, [nc]]  # Pass P3, P4, P5, P6, P7 to Detect head (index 32) 25
+  - [[41, 44, 47, 50, 53], 1, RTDETRDecoder, [nc]]  # Pass P3, P4, P5, P6, P7 to Detect head (index 32) 25
