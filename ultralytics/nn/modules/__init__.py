@@ -58,6 +58,15 @@ from .block import (
     ResNetLayer,
     SCDown,
     TorchVision,
+    DWBottleneck,
+    C2fGhost,
+    C3k2Ghost,
+    C3kGhost,
+    DWC2f,
+    DWC3k2,
+    DWC3k,
+    DWBottleneck,
+
 )
 from .conv import (
     CBAM,
@@ -169,4 +178,13 @@ __all__ = (
     "BiFPN_Concat2",
     "BiFPN_Concat3",
     "EMA",
+    "DWBottleneck",
+    "C2fGhost",
+    "C3k2Ghost",
+    "C3kGhost",
+    "DWC2f",
+    "DWC3k2",
+    "DWC3k",
+    "DWBottleneck",
+
 )
