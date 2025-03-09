@@ -999,7 +999,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             PSA,
             SCDown,
             C2fCIB,
-            EMA,
+            # EMA,
             DepthwiseConvBlock,
             DWC2f,
             DWBottleneck,
