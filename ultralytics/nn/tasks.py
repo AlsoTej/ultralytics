@@ -76,9 +76,8 @@ from ultralytics.nn.modules import (
     ECA,
     DWC2f_Attn,
     DWC3k2_Attn,
-
-
 )
+
 from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, DepthwiseConvBlock
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
@@ -1035,7 +1034,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2PSA,
             # BiFPN_Concat2,
             # BiFPN_Concat3,
-            # DWC3k2,
+            DWC3k2,
             DWC2f_Attn,
             DWC3k2_Attn,
         }
@@ -1085,10 +1084,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
         #Add bifpn_concat structure
-        elif m in [Concat, BiFPN_Concat2, BiFPN_Concat3]:
-            c2 = sum(ch[x] for x in f)
-        # elif m in [BiFPN_Concat2, BiFPN_Concat3]:
-            # c2 = ch[f[0]]
+        # elif m in [Concat, BiFPN_Concat2, BiFPN_Concat3]:
+            # c2 = sum(ch[x] for x in f)
+        elif m in [BiFPN_Concat2, BiFPN_Concat3]:
+            c2 = ch[f[0]]
         elif m in frozenset({Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}):
             args.append([ch[x] for x in f])
             if m is Segment:
@@ -1107,6 +1106,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = args[0]
             c1 = ch[f]
             args = [*args[1:]]
+        else:
+            c2 = ch[f]
         elif m is EMA:
             c1 = ch[f]
             c2 = args[0]  # Use unscaled channel count
@@ -1117,7 +1118,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [c1, *args[1:]]
         else:
             c2 = ch[f]
-
+     
         m_ = torch.nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace("__main__.", "")  # module type
         m_.np = sum(x.numel() for x in m_.parameters())  # number params
@@ -1130,6 +1131,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             ch = []
         ch.append(c2)
     return torch.nn.Sequential(*layers), sorted(save)
+
 
 def yaml_model_load(path):
     """Load a YOLOv8 model from a YAML file."""
