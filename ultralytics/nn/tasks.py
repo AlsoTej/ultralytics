@@ -1035,7 +1035,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2PSA,
             # BiFPN_Concat2,
             # BiFPN_Concat3,
-            DWC3k2,
+            # DWC3k2,
             DWC2f_Attn,
             DWC3k2_Attn,
         }
