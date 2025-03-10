@@ -30,13 +30,18 @@ class DepthwiseConvBlock(nn.Module):
     """Depthwise Separable Convolution with args(ch_in, ch_out, kernel, stride, padding, dilation, activation)."""
     default_act = nn.SiLU()  # default activation, consistent with YOLOv8
 
-    def __init__(self, c1, c2, k=3, s=1, p=None, d=1, act=True):
+    def __init__(self, c1, c2, k=3, s=1, p=None, d=1, act=True, bn_momentum=0.1, bn_eps=1e-5):
         """Initialize Depthwise Separable Convolution layer with given arguments."""
         super().__init__()
         self.depthwise = nn.Conv2d(c1, c1, k, s, autopad(k, p, d), groups=c1, dilation=d, bias=False)
         self.pointwise = nn.Conv2d(c1, c2, 1, 1, 0, groups=1, bias=False)
-        self.bn = nn.BatchNorm2d(c2, momentum=0.9997, eps=4e-5)
+        # self.bn = nn.BatchNorm2d(c2, momentum=0.9997, eps=4e-5)
+        self.bn = nn.BatchNorm2d(c2, momentum=bn_momentum, eps=bn_eps)
         self.act = self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity()
+
+        # Initialize weights using Kaiming initialization (suitable for ReLU-like activations, including SiLU)
+        nn.init.kaiming_normal_(self.depthwise.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.kaiming_normal_(self.pointwise.weight, mode='fan_out', nonlinearity='relu')
 
     def forward(self, x):
         """Apply depthwise and pointwise convolutions, batch normalization, and activation."""
