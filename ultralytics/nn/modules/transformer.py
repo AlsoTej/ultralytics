@@ -24,8 +24,23 @@ __all__ = (
     "MLP",
     "EMA",
     "ECA",
+    "CrossAttention",
 )
+class CrossAttention(nn.Module):
+    def __init__(self, channels):
+        super(CrossAttention, self).__init__()
+        self.query = nn.Conv2d(channels, channels, 1)
+        self.key = nn.Conv2d(channels, channels, 1)
+        self.value = nn.Conv2d(channels, channels, 1)
+        self.softmax = nn.Softmax(dim=-1)
 
+    def forward(self, x1, x2):  # x1: Swin, x2: CNN
+        Q = self.query(x1)
+        K = self.key(x2)
+        V = self.value(x2)
+        attention = self.softmax(Q @ K.transpose(-2, -1))
+        return attention @ V
+        
 class ECA(nn.Module):  # Renamed for clarity and PEP 8 compliance
     """Constructs an ECA module.
 
