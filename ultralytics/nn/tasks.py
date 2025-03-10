@@ -73,6 +73,9 @@ from ultralytics.nn.modules import (
     DWC3k2,
     DWC3k,
     DWBottleneck,
+    ECA,
+    DWC2f_Attn,
+    DWC3k2_Attn,
 
 
 )
@@ -1010,6 +1013,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             DWC3k2,            
             DWC3k,
             DWBottleneck,
+            DWC2f_Attn,
+            DWC3k2_Attn,
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1031,6 +1036,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # BiFPN_Concat2,
             # BiFPN_Concat3,
             DWC3k2,
+            DWC2f_Attn,
+            DWC3k2_Attn,
         }
     )
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
@@ -1078,10 +1085,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
         #Add bifpn_concat structure
-        # elif m in [Concat, BiFPN_Concat2, BiFPN_Concat3]:
-            # c2 = sum(ch[x] for x in f)
-        elif m in [BiFPN_Concat2, BiFPN_Concat3]:
-            c2 = ch[f[0]]
+        elif m in [Concat, BiFPN_Concat2, BiFPN_Concat3]:
+            c2 = sum(ch[x] for x in f)
+        # elif m in [BiFPN_Concat2, BiFPN_Concat3]:
+            # c2 = ch[f[0]]
         elif m in frozenset({Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}):
             args.append([ch[x] for x in f])
             if m is Segment:
@@ -1100,6 +1107,14 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = args[0]
             c1 = ch[f]
             args = [*args[1:]]
+        elif m is EMA:
+            c1 = ch[f]
+            c2 = args[0]  # Use unscaled channel count
+            args = [c1, c2, *args[1:]]
+        elif m is ECA:
+            c1 = ch[f]
+            # c2 = args[0]
+            args = [c1, *args[1:]]
         else:
             c2 = ch[f]
 
@@ -1115,7 +1130,6 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             ch = []
         ch.append(c2)
     return torch.nn.Sequential(*layers), sorted(save)
-
 
 def yaml_model_load(path):
     """Load a YOLOv8 model from a YAML file."""
