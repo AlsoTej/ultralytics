@@ -1106,8 +1106,6 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = args[0]
             c1 = ch[f]
             args = [*args[1:]]
-        else:
-            c2 = ch[f]
         elif m is EMA:
             c1 = ch[f]
             c2 = args[0]  # Use unscaled channel count
