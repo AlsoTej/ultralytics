@@ -103,6 +103,7 @@ from .transformer import (
     TransformerLayer,
     EMA,
     ECA,
+    SEBlock,
 )
 
 __all__ = (
