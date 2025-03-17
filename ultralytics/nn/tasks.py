@@ -74,6 +74,7 @@ from ultralytics.nn.modules import (
     DWC3k,
     DWBottleneck,
     ECA,
+    SEBlock,
     DWC2f_Attn,
     DWC3k2_Attn,
 )
@@ -1114,6 +1115,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c1 = ch[f]
             # c2 = args[0]
             args = [c1, *args[1:]]
+        elif m is SEBlock:  # Add this condition
+            c1, c2 = ch[f], args[0]
+            args = [c1, c2, *args[1:]]
         else:
             c2 = ch[f]
      
