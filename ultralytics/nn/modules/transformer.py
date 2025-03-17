@@ -4,6 +4,7 @@
 import math
 
 import torch
+import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.init import constant_, xavier_uniform_
