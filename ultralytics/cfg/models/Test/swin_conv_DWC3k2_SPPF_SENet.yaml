@@ -28,13 +28,13 @@ backbone:
     
   # Concat
   - [[3, 12], 1, Concat, [1]]  # 19: Concatenate (192 + 256 = 448 channels)
-  - [-1, 1, SEBlock, [256]]  # 20: SE on 448 channels, squeeze = 28
+  - [-1, 1, torchvision.ops.SqueezeExcitation, [256]]  # 20: SE on 448 channels, squeeze = 28
 
   - [[5, 15], 1, Concat, [1]]  # 21: Concatenate (384 + 512 = 896 channels)
-  - [-1, 1, SEBlock, [512]]  # 22: SE on 896 channels, squeeze = 56
+  - [-1, 1, torchvision.ops.SqueezeExcitation, [512]]  # 22: SE on 896 channels, squeeze = 56
 
   - [[8, 18], 1, Concat, [1]]  # 23: Concatenate (768 + 1024 = 1792 channels)
-  - [-1, 1, SEBlock, [1024]]  # 24: SE on 1792 channels, squeeze = 112
+  - [-1, 1, torchvision.ops.SqueezeExcitation, [1024]]  # 24: SE on 1792 channels, squeeze = 112
   
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #25
