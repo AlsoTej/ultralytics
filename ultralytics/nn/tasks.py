@@ -1117,7 +1117,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [c1, *args[1:]]
         elif m is SEBlock:  # Add this condition
             c1, c2 = ch[f], args[0]
-            args = [c1, c2, *args[1:]]
+            args = [c1, c2 // 16, *args[2:]]
+            
         else:
             c2 = ch[f]
      
