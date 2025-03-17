@@ -24,7 +24,17 @@ __all__ = (
     "MLP",
     "EMA",
     "ECA",
-)        
+    "SEBlock",
+)
+
+class SEBlock(nn.Module):
+    def __init__(self, input_channels, squeeze_channels, activation=nn.ReLU, scale_activation=nn.Sigmoid):
+        super().__init__()
+        self.se = torchvision.ops.SqueezeExcitation(input_channels, squeeze_channels, activation, scale_activation)
+
+    def forward(self, x):
+        return self.se(x)
+
 class ECA(nn.Module):  # Renamed for clarity and PEP 8 compliance
     """Constructs an ECA module.
 
