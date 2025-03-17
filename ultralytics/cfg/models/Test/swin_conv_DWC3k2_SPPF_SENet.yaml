@@ -28,13 +28,13 @@ backbone:
     
   #Concat
   - [[3, 12], 1, Concat, [1]] # 19 (1, 448, 80, 80)  (256)
-  - [-1, 1, torchvision.ops.SqueezeExcitation, [256, 56]]  #20
+  - [-1, 1, torchvision.ops.SqueezeExcitation, [256, 28]]  #20
   
   - [[5, 15], 1, Concat, [1]] # 21 (1, 896, 40, 40) (512)
-  - [-1, 1, torchvision.ops.SqueezeExcitation, [512, 112]] #22
+  - [-1, 1, torchvision.ops.SqueezeExcitation, [512, 56]] #22
 
   - [[8, 18], 1, Concat, [1]] #23 (1, 1792, 20, 20) (1024)
-  - [-1, 1, torchvision.ops.SqueezeExcitation, [1024, 224]]  #24
+  - [-1, 1, torchvision.ops.SqueezeExcitation, [1024, 112]]  #24
 
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #25
