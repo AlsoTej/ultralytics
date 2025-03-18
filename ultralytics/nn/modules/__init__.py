@@ -109,6 +109,7 @@ from .transformer import (
     h_sigmoid,
     h_swish,
     CoordAtt,
+    CoordinateAttention,
 )
 
 __all__ = (
@@ -202,4 +203,5 @@ __all__ = (
     "h_sigmoid",
     "h_swish",
     "CoordAtt",
+    "CoordinateAttention",
 )
