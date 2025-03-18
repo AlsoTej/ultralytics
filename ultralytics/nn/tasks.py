@@ -1016,7 +1016,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             DWBottleneck,
             DWC2f_Attn,
             DWC3k2_Attn,
-            SimAMModule,
+            # SimAMModule,
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
