@@ -68,6 +68,7 @@ from .block import (
     DWBottleneck,
     DWC2f_Attn,
     DWC3k2_Attn,
+    
 )
 
 from .conv import (
@@ -105,6 +106,9 @@ from .transformer import (
     ECA,
     SEBlock,
     SimAMModule,
+    h_sigmoid,
+    h_swish,
+    CoordAtt,
 )
 
 __all__ = (
@@ -195,4 +199,7 @@ __all__ = (
     "DWC2f_Attn",
     "DWC3k2_Attn",
     "SimAMModule",
+    "h_sigmoid",
+    "h_swish",
+    "CoordAtt",
 )
