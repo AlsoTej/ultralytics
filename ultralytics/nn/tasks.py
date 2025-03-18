@@ -1132,11 +1132,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 c1 = sum([ch[i] for i in f])  # Sum channels from all sources
             m_ = m(*args)  # Instantiate CoordAtt       
         elif m is CoordinateAttention:  # Handle CoordinateAttention separately
-            if isinstance(from_, list) and len(from_) > 1:  # Ensure from_ is a list with multiple inputs
-                c1 = sum([ch[f] for f in from_])  # Sum channels from all sources
             args = [c1, c2]  # Ensure updated c1 is used
-            m_ = m(*args)  # Instantiate CoordinateAttention
-
         else:
             c2 = ch[f]
      
