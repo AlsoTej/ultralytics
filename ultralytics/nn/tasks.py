@@ -78,6 +78,9 @@ from ultralytics.nn.modules import (
     DWC3k2_Attn,
     SEBlock,
     SimAMModule,
+    h_sigmoid,
+    h_swish,
+    CoordAtt,
 )
 
 from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, DepthwiseConvBlock
@@ -1122,6 +1125,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is SEBlock:  # Add this condition
             c1, c2 = ch[f], args[0]
             args = [c1, c2 // 16, *args[2:]]
+        elif m is CoordAtt:  # Handle CoordAtt separately
+            args = [c1, c2]  # CoordAtt requires (inp, oup)
             
         else:
             c2 = ch[f]
