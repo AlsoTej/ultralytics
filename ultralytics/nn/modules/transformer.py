@@ -26,7 +26,34 @@ __all__ = (
     "EMA",
     "ECA",
     "SEBlock",
+    "SimAMModule",
 )
+
+class SimAMModule(nn.Module):
+    def __init__(self, channels=None, e_lambda=1e-4):
+        super(SimAMModule, self).__init__()
+        self.activation = nn.Sigmoid()  # Fixed typo
+        self.e_lambda = e_lambda
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(lambda={self.e_lambda})"
+
+    @staticmethod
+    def get_module_name():
+        return "SimAM"
+
+    def forward(self, x):
+        b, c, h, w = x.size()
+        n = w * h - 1  # Number of elements excluding one
+
+        # Compute squared difference from mean
+        x_minus_mu_square = (x - x.mean(dim=[2, 3], keepdim=True)).pow(2)
+
+        # Compute attention weights
+        denominator = 4 * (x_minus_mu_square.sum(dim=[2, 3], keepdim=True) / n + self.e_lambda)
+        y = x_minus_mu_square / (denominator + 1e-6) + 0.5  # Added epsilon for stability
+
+        return x * self.activation(y)  
 
 class SEBlock(nn.Module):
     def __init__(self, input_channels, squeeze_channels, activation=nn.ReLU, scale_activation=nn.Sigmoid):
