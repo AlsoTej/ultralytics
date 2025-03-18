@@ -104,6 +104,7 @@ from .transformer import (
     EMA,
     ECA,
     SEBlock,
+    SimAMModule,
 )
 
 __all__ = (
@@ -193,5 +194,5 @@ __all__ = (
     "ECA",
     "DWC2f_Attn",
     "DWC3k2_Attn",
-
+    "SimAMModule",
 )
