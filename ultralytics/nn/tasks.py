@@ -81,6 +81,7 @@ from ultralytics.nn.modules import (
     h_sigmoid,
     h_swish,
     CoordAtt,
+    CoordinateAttention,
 )
 
 from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, DepthwiseConvBlock
@@ -1129,7 +1130,13 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [c1, c2]  # c1 = input channels, c2 = output channels
             if isinstance(f, list) and len(f) > 1:  # If multiple inputs are concatenated
                 c1 = sum([ch[i] for i in f])  # Sum channels from all sources
-            m_ = m(*args)  # Instantiate CoordAtt        
+            m_ = m(*args)  # Instantiate CoordAtt       
+        elif m is CoordinateAttention:  # Handle CoordinateAttention separately
+            if isinstance(from_, list) and len(from_) > 1:  # If multiple inputs are concatenated
+                c1 = sum([ch[f] for f in from_])  # Sum channels from all sources
+            args = [c1, c2]  # CoordinateAttention requires (input channels, output channels)
+            m_ = m(*args)  # Instantiate CoordinateAttention
+
         else:
             c2 = ch[f]
      
