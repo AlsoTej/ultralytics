@@ -1127,9 +1127,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [c1, c2 // 16, *args[2:]]
         elif m is CoordAtt:  # Handle CoordAtt separately
             args = [c1, c2]  # c1 = input channels, c2 = output channels
-            if len(from_) > 1:  # If multiple inputs are concatenated
-                c1 = sum([ch[f] for f in from_])  # Sum channels from all sources
-            m_ = m(*args)  # Instantiate CoordAtt            
+            if isinstance(f, list) and len(f) > 1:  # If multiple inputs are concatenated
+                c1 = sum([ch[i] for i in f])  # Sum channels from all sources
+            m_ = m(*args)  # Instantiate CoordAtt        
         else:
             c2 = ch[f]
      
