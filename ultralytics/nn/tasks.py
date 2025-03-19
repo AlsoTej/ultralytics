@@ -82,6 +82,7 @@ from ultralytics.nn.modules import (
     h_swish,
     CoordAtt,
     CoordinateAttention,
+    SKLayer,
 )
 
 from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, DepthwiseConvBlock
