@@ -28,13 +28,13 @@ backbone:
     
   #Concat
   - [[3, 12], 1, Concat, [1]] # 19 (1, 448, 80, 80) (256)
-  - [-1, 1, CoordinateAttention, [256, 16]]  # 20: Ensure input matches
+  - [-1, 1, CoordinateAttention, [256, 256]]  # 20: Ensure input matches
 
   - [[5, 15], 1, Concat, [1]] # 21 (1, 896, 40, 40) (512)
-  - [-1, 1, CoordinateAttention, [512, 32]] #22
+  - [-1, 1, CoordinateAttention, [512, 256]] #22
 
   - [[8, 18], 1, Concat, [1]] #23 (1, 1792, 20, 20) (448)
-  - [23, 1, CoordinateAttention, [448, 28]]  #24
+  - [23, 1, CoordinateAttention, [448, 256]]  #24
 
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #25
