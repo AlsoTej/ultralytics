@@ -110,6 +110,7 @@ from .transformer import (
     h_swish,
     CoordAtt,
     CoordinateAttention,
+    SKLayer,
 )
 
 __all__ = (
