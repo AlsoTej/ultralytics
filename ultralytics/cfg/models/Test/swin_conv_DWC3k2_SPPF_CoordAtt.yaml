@@ -36,7 +36,7 @@ backbone:
 
   - [[5, 15], 1, Concat, [1]] # 21 (1, 896, 40, 40) (512)
   # - [-1, 1, CoordinateAttention, [512, 512]] #22
-    - [-1, 1, CoordinateAttention, [896, 896]] #22
+  - [-1, 1, CoordinateAttention, [896, 896]] #22
 
 
   - [[8, 18], 1, Concat, [1]] #23 (1, 1792, 20, 20) (448)
