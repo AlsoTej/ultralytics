@@ -29,15 +29,15 @@ backbone:
     
   #Concat
   - [[3, 12], 1, Concat, [1]] # 19 (1, 448, 80, 80) (256)
-  - [-1, 1, SKLayer, []]  # 20: Ensure input matches
+  - [-1, 1, SKLayer, [256, 256]]  # 20: Ensure input matches
 
 
   - [[5, 15], 1, Concat, [1]] # 21 (1, 896, 40, 40) (512)
-  - [-1, 1, SKLayer, []] #22
+  - [-1, 1, SKLayer, [512, 512]] #22
 
 
   - [[8, 18], 1, Concat, [1]] #23 (1, 1792, 20, 20) (448)
-  - [23, 1, SKLayer, []]  #24
+  - [23, 1, SKLayer, [448, 448]]  #24
 
 
 head:
