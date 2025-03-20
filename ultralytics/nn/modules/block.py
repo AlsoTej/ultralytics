@@ -78,23 +78,23 @@ class Select(nn.Module):
 
 class DepthwiseConvBlock(nn.Module):
     """
-    Depthwise seperable convolution. 
-    
-    
+    Depthwise Separable Convolution Block with auto-padding.
     """
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, freeze_bn=False):
-        super(DepthwiseConvBlock,self).__init__()
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=None, dilation=1):
+        super(DepthwiseConvBlock, self).__init__()
+        if padding is None:
+            padding = (kernel_size - 1) // 2  # Ensures "same" output size
+
         self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size, stride, 
-                               padding, dilation, groups=in_channels, bias=False)
+                                   padding, dilation, groups=in_channels, bias=False)
         self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, 
-                                   stride=1, padding=0, dilation=1, groups=1, bias=False)
-        
-        
-        self.bn = nn.BatchNorm2d(out_channels, momentum=0.9997, eps=4e-5)
+                                   stride=1, padding=0, dilation=1, bias=False)
+        self.bn = nn.BatchNorm2d(out_channels)
         self.act = nn.ReLU()
-        
-    def forward(self, inputs):
-        x = self.depthwise(inputs)
+
+    def forward(self, x):
+        x = self.depthwise(x)
         x = self.pointwise(x)
         x = self.bn(x)
         return self.act(x)
@@ -571,13 +571,13 @@ class DWBottleneck(nn.Module):
     def __init__(self, c1, c2, shortcut=True, g=1, k=(3, 3), e=0.5):
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = DepthwiseConvBlock(c1, c_, k[0], 1)  # Same stride
-        self.cv2 = DepthwiseConvBlock(c_, c2, k[1], 1)  # Same stride
-        self.add = shortcut and c1 == c2  # Only add if shapes match
+        self.cv1 = DepthwiseConvBlock(c1, c_, k[0], 1)  # Ensuring same size
+        self.cv2 = DepthwiseConvBlock(c_, c2, k[1], 1)  # Ensuring same size
+        self.add = shortcut and c1 == c2  
 
     def forward(self, x):
         y = self.cv2(self.cv1(x))
-        return x + y if self.add and x.shape == y.shape else y
+        return x + y if self.add and x.shape == y.shape else y  # Ensure shape match before addition
 
 class BottleneckCSP(nn.Module):
     """CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks."""
@@ -966,20 +966,24 @@ class DWC3k2(nn.Module):
     """C3k2 variant using depthwise separable convolutions."""
 
     def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True):
-        """Initializes the DWC3k2 module with depthwise convolutions."""
         super().__init__()
         self.c = int(c2 * e)  # hidden channels
-        self.cv1 = DepthwiseConvBlock(c1, 2 * self.c, 1, 1)
-        self.cv2 = DepthwiseConvBlock((2 + n) * self.c, c2, 1)
+        self.cv1 = DepthwiseConvBlock(c1, 2 * self.c, 1, 1)  # Ensures same size
+        self.cv2 = DepthwiseConvBlock((2 + n) * self.c, c2, 1)  # Ensures same size
         self.m = nn.ModuleList(
             DWC3k(self.c, self.c, 2, shortcut, g) if c3k else DWBottleneck(self.c, self.c, shortcut, g) for _ in range(n)
         )
 
     def forward(self, x):
-        """Forward pass through DWC3k2."""
+        """Forward pass with shape validation."""
         y = list(self.cv1(x).chunk(2, 1))
-        y.extend(m(y[-1]) for m in self.m)
-        return self.cv2(torch.cat(y, 1))        
+        for m in self.m:
+            out = m(y[-1])
+            if out.shape[2:] != y[0].shape[2:]:  # Check spatial sizes before concatenation
+                out = nn.functional.interpolate(out, size=y[0].shape[2:], mode='bilinear', align_corners=False)
+            y.append(out)
+        
+        return self.cv2(torch.cat(y, 1))  # Ensures matching sizes before concatenation
 class DWC3k2_Attn(DWC2f_Attn):
     """Faster Implementation of CSP Bottleneck with 2 convolutions."""
 
