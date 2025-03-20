@@ -87,7 +87,7 @@ from ultralytics.nn.modules import (
     ConvBlock,
     BiFPNBlock,
     BiFPN,
-
+    Select,
 )
 
 from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, DepthwiseConvBlock
