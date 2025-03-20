@@ -78,19 +78,13 @@ class Select(nn.Module):
 
 class DepthwiseConvBlock(nn.Module):
     """
-    Depthwise seperable convolution. 
-    
-    
+    Depthwise separable convolution.
     """
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, freeze_bn=False):
-        super(DepthwiseConvBlock,self).__init__()
-        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size, stride, 
-                               padding, dilation, groups=in_channels, bias=False)
-        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, 
-                                   stride=1, padding=0, dilation=1, groups=1, bias=False)
-        
-        
-        self.bn = nn.BatchNorm2d(out_channels, momentum=0.9997, eps=4e-5)
+    def __init__(self, c1, c2, k=1, s=1, p=0, d=1, freeze_bn=False):
+        super(DepthwiseConvBlock, self).__init__()
+        self.depthwise = nn.Conv2d(c1, c1, k, s, p, d, groups=c1, bias=False)
+        self.pointwise = nn.Conv2d(c1, c2, kernel_size=1, stride=1, padding=0, dilation=1, groups=1, bias=False)
+        self.bn = nn.BatchNorm2d(c2, momentum=0.9997, eps=4e-5)
         self.act = nn.ReLU()
         
     def forward(self, inputs):
@@ -98,40 +92,39 @@ class DepthwiseConvBlock(nn.Module):
         x = self.pointwise(x)
         x = self.bn(x)
         return self.act(x)
-    
+        
 class ConvBlock(nn.Module):
     """
     Convolution block with Batch Normalization and ReLU activation.
-    
     """
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, freeze_bn=False):
-        super(ConvBlock,self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding)
-        self.bn = nn.BatchNorm2d(out_channels, momentum=0.9997, eps=4e-5)
+    def __init__(self, c1, c2, k=1, s=1, p=0, d=1, freeze_bn=False):
+        super(ConvBlock, self).__init__()
+        self.conv = nn.Conv2d(c1, c2, k, stride=s, padding=p)
+        self.bn = nn.BatchNorm2d(c2, momentum=0.9997, eps=4e-5)
         self.act = nn.ReLU()
 
     def forward(self, inputs):
         x = self.conv(inputs)
         x = self.bn(x)
         return self.act(x)
-
+        
 class BiFPNBlock(nn.Module):
     """
     Bi-directional Feature Pyramid Network
     """
-    def __init__(self, feature_size=64, epsilon=0.0001):
+    def __init__(self, c=64, epsilon=0.0001):
         super(BiFPNBlock, self).__init__()
         self.epsilon = epsilon
         
-        self.p3_td = DepthwiseConvBlock(feature_size, feature_size)
-        self.p4_td = DepthwiseConvBlock(feature_size, feature_size)
-        self.p5_td = DepthwiseConvBlock(feature_size, feature_size)
-        self.p6_td = DepthwiseConvBlock(feature_size, feature_size)
+        self.p3_td = DepthwiseConvBlock(c, c)
+        self.p4_td = DepthwiseConvBlock(c, c)
+        self.p5_td = DepthwiseConvBlock(c, c)
+        self.p6_td = DepthwiseConvBlock(c, c)
         
-        self.p4_out = DepthwiseConvBlock(feature_size, feature_size)
-        self.p5_out = DepthwiseConvBlock(feature_size, feature_size)
-        self.p6_out = DepthwiseConvBlock(feature_size, feature_size)
-        self.p7_out = DepthwiseConvBlock(feature_size, feature_size)
+        self.p4_out = DepthwiseConvBlock(c, c)
+        self.p5_out = DepthwiseConvBlock(c, c)
+        self.p6_out = DepthwiseConvBlock(c, c)
+        self.p7_out = DepthwiseConvBlock(c, c)
         
         # TODO: Init weights
         self.w1 = nn.Parameter(torch.Tensor(2, 4))
@@ -162,23 +155,23 @@ class BiFPNBlock(nn.Module):
         p7_out = self.p7_out(w2[0, 3] * p7_x + w2[1, 3] * p7_td + w2[2, 3] * nn.Upsample(scale_factor=0.5)(p6_out))
 
         return [p3_out, p4_out, p5_out, p6_out, p7_out]
-    
+        
 class BiFPN(nn.Module):
-    def __init__(self, size, feature_size=64, num_layers=2, epsilon=0.0001):
+    def __init__(self, in_chs, c=64, n=2, epsilon=0.0001):
         super(BiFPN, self).__init__()
-        self.p3 = nn.Conv2d(size[0], feature_size, kernel_size=1, stride=1, padding=0)
-        self.p4 = nn.Conv2d(size[1], feature_size, kernel_size=1, stride=1, padding=0)
-        self.p5 = nn.Conv2d(size[2], feature_size, kernel_size=1, stride=1, padding=0)
+        self.p3 = nn.Conv2d(in_chs[0], c, kernel_size=1, stride=1, padding=0)
+        self.p4 = nn.Conv2d(in_chs[1], c, kernel_size=1, stride=1, padding=0)
+        self.p5 = nn.Conv2d(in_chs[2], c, kernel_size=1, stride=1, padding=0)
         
         # p6 is obtained via a 3x3 stride-2 conv on C5
-        self.p6 = nn.Conv2d(size[2], feature_size, kernel_size=3, stride=2, padding=1)
+        self.p6 = nn.Conv2d(in_chs[2], c, kernel_size=3, stride=2, padding=1)
         
         # p7 is computed by applying ReLU followed by a 3x3 stride-2 conv on p6
-        self.p7 = ConvBlock(feature_size, feature_size, kernel_size=3, stride=2, padding=1)
+        self.p7 = ConvBlock(c, c, k=3, s=2, p=1)
 
         bifpns = []
-        for _ in range(num_layers):
-            bifpns.append(BiFPNBlock(feature_size))
+        for _ in range(n):
+            bifpns.append(BiFPNBlock(c))
         self.bifpn = nn.Sequential(*bifpns)
     
     def forward(self, inputs):
@@ -192,8 +185,8 @@ class BiFPN(nn.Module):
         p7_x = self.p7(p6_x)
         
         features = [p3_x, p4_x, p5_x, p6_x, p7_x]
-        return self.bifpn(features)        
-
+        return self.bifpn(features)
+        
 class DFL(nn.Module):
     """
     Integral module of Distribution Focal Loss (DFL).
