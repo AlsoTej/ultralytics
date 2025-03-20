@@ -1134,6 +1134,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             m_ = m(*args)  # Instantiate CoordAtt       
         # elif m is CoordinateAttention:  # Handle CoordinateAttention separately
         #     args = [c1, *args[1:]]
+        elif m is BiFPN:
+            size = [ch[x] for x in f]  # Get input channel sizes, e.g., [256, 512, 1024]
+            args = [size, *args]       # Prepend size to args, e.g., [[256, 512, 1024], 256, 2]
+            c2 = args[1]               # feature_size, e.g., 256
         else:
             c2 = ch[f]
      
