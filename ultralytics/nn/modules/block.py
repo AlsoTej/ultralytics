@@ -566,15 +566,19 @@ class Bottleneck(nn.Module):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 class DWBottleneck(nn.Module):
-    """Standard bottleneck."""
+    """Depthwise Bottleneck with depthwise separable convolutions."""
 
-    def __init__(self, c1, c2, shortcut=True, g=1, k=(3, 3), e=0.5, bn_momentum=0.1, bn_eps=1e-5):
-        """Initializes a standard bottleneck module with optional shortcut connection and configurable parameters."""
+    def __init__(self, c1, c2, shortcut=True, g=1, k=(3, 3), e=0.5):
+        """Initializes a bottleneck using depthwise convolutions."""
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = DepthwiseConvBlock(in_channels=c1, out_channels=c_, kernel_size=k[0], stride=1, padding=1)
-        self.cv2 = DepthwiseConvBlock(in_channels=c_, out_channels=c2, kernel_size=k[1], stride=1, padding=1)
+        self.cv1 = DepthwiseConvBlock(c1, c_, k[0], 1)
+        self.cv2 = DepthwiseConvBlock(c_, c2, k[1], 1)
         self.add = shortcut and c1 == c2
+
+    def forward(self, x):
+        """Applies depthwise bottleneck transformation."""
+        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
     def forward(self, x):
         """Applies the YOLO FPN to input data."""
@@ -962,15 +966,24 @@ class C3k2(C2f):
         self.m = nn.ModuleList(
             C3k(self.c, self.c, 2, shortcut, g) if c3k else Bottleneck(self.c, self.c, shortcut, g) for _ in range(n)
         )
-class DWC3k2(DWC2f):
-    """Faster Implementation of CSP Bottleneck with 2 convolutions."""
+class DWC3k2(nn.Module):
+    """C3k2 variant using depthwise separable convolutions."""
 
-    def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True, bn_momentum=0.1, bn_eps=1e-5):
-        super().__init__(c1, c2, n, shortcut, g, e)
+    def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True):
+        """Initializes the DWC3k2 module with depthwise convolutions."""
+        super().__init__()
+        self.c = int(c2 * e)  # hidden channels
+        self.cv1 = DepthwiseConvBlock(c1, 2 * self.c, 1, 1)
+        self.cv2 = DepthwiseConvBlock((2 + n) * self.c, c2, 1)
         self.m = nn.ModuleList(
             DWC3k(self.c, self.c, 2, shortcut, g) if c3k else DWBottleneck(self.c, self.c, shortcut, g) for _ in range(n)
         )
-        
+
+    def forward(self, x):
+        """Forward pass through DWC3k2."""
+        y = list(self.cv1(x).chunk(2, 1))
+        y.extend(m(y[-1]) for m in self.m)
+        return self.cv2(torch.cat(y, 1))        
 class DWC3k2_Attn(DWC2f_Attn):
     """Faster Implementation of CSP Bottleneck with 2 convolutions."""
 
@@ -1008,14 +1021,15 @@ class C3k(C3):
         # self.m = nn.Sequential(*(RepBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
         self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
 
-class DWC3k(C3):
-    """C3k is a CSP bottleneck module with customizable kernel sizes for feature extraction in neural networks."""
+class DWC3k(nn.Module):
+    """C3k module using depthwise separable convolutions."""
 
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, k=3, bn_momentum=0.1, bn_eps=1e-5):
-        """Initializes the C3k module with specified channels, number of layers, and configurations."""
-        super().__init__(c1, c2, n, shortcut, g, e)
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, k=3):
+        """Initializes the DWC3k module with depthwise convolutions."""
+        super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.m = nn.Sequential(*(DWBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))        
+        self.m = nn.Sequential(*(DWBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
+        
 class C3kGhost(C3):
     """Ghost version of C3k."""
 
