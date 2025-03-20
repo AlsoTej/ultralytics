@@ -566,23 +566,19 @@ class Bottleneck(nn.Module):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 class DWBottleneck(nn.Module):
-    """Depthwise Bottleneck with depthwise separable convolutions."""
+    """Depthwise Bottleneck with consistent output size."""
 
     def __init__(self, c1, c2, shortcut=True, g=1, k=(3, 3), e=0.5):
-        """Initializes a bottleneck using depthwise convolutions."""
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = DepthwiseConvBlock(c1, c_, k[0], 1)
-        self.cv2 = DepthwiseConvBlock(c_, c2, k[1], 1)
-        self.add = shortcut and c1 == c2
+        self.cv1 = DepthwiseConvBlock(c1, c_, k[0], 1)  # Same stride
+        self.cv2 = DepthwiseConvBlock(c_, c2, k[1], 1)  # Same stride
+        self.add = shortcut and c1 == c2  # Only add if shapes match
 
     def forward(self, x):
-        """Applies depthwise bottleneck transformation."""
-        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+        y = self.cv2(self.cv1(x))
+        return x + y if self.add and x.shape == y.shape else y
 
-    def forward(self, x):
-        """Applies the YOLO FPN to input data."""
-        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))        
 class BottleneckCSP(nn.Module):
     """CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks."""
 
