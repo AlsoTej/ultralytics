@@ -77,25 +77,24 @@ class Select(nn.Module):
         return x[self.index]
 
 class DepthwiseConvBlock(nn.Module):
-    """Depthwise Separable Convolution with args(ch_in, ch_out, kernel, stride, padding, dilation, activation)."""
-    default_act = nn.SiLU()  # default activation, consistent with YOLOv8
-
-    def __init__(self, c1, c2, k=3, s=1, p=None, d=1, act=True, bn_momentum=0.1, bn_eps=1e-5):
-        """Initialize Depthwise Separable Convolution layer with given arguments."""
-        super().__init__()
-        self.depthwise = nn.Conv2d(c1, c1, k, s, autopad(k, p, d), groups=c1, dilation=d, bias=False)
-        self.pointwise = nn.Conv2d(c1, c2, 1, 1, 0, groups=1, bias=False)
-        # self.bn = nn.BatchNorm2d(c2, momentum=0.9997, eps=4e-5)
-        self.bn = nn.BatchNorm2d(c2, momentum=bn_momentum, eps=bn_eps)
-        self.act = self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity()
-
-        # Initialize weights using Kaiming initialization (suitable for ReLU-like activations, including SiLU)
-        nn.init.kaiming_normal_(self.depthwise.weight, mode='fan_out', nonlinearity='relu')
-        nn.init.kaiming_normal_(self.pointwise.weight, mode='fan_out', nonlinearity='relu')
-
-    def forward(self, x):
-        """Apply depthwise and pointwise convolutions, batch normalization, and activation."""
-        x = self.depthwise(x)
+    """
+    Depthwise seperable convolution. 
+    
+    
+    """
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, freeze_bn=False):
+        super(DepthwiseConvBlock,self).__init__()
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size, stride, 
+                               padding, dilation, groups=in_channels, bias=False)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, 
+                                   stride=1, padding=0, dilation=1, groups=1, bias=False)
+        
+        
+        self.bn = nn.BatchNorm2d(out_channels, momentum=0.9997, eps=4e-5)
+        self.act = nn.ReLU()
+        
+    def forward(self, inputs):
+        x = self.depthwise(inputs)
         x = self.pointwise(x)
         x = self.bn(x)
         return self.act(x)
@@ -395,11 +394,10 @@ class DWC2f(nn.Module):
         """Initializes a CSP bottleneck with 2 convolutions and n Bottleneck blocks for faster processing."""
         super().__init__()
         self.c = int(c2 * e)  # hidden channels
-        # self.cv1 = Conv(c1, 2 * self.c, 1, 1)
-        # self.cv2 = Conv((2 + n) * self.c, c2, 1)  # optional act=FReLU(c2)
-        self.cv1 = DepthwiseConvBlock(c1=c1, c2=2 * self.c, k=1, s=1, bn_momentum=bn_momentum, bn_eps=bn_eps)  # changed args
-        self.cv2 = DepthwiseConvBlock(c1=(2 + n) * self.c, c2=c2, k=1, s=1, bn_momentum=bn_momentum, bn_eps=bn_eps)  # changed args
-        self.m = nn.ModuleList(DWBottleneck(self.c, self.c, shortcut, g, k=((3, 3), (3, 3)), e=1.0, bn_momentum=bn_momentum, bn_eps=bn_eps) for _ in range(n))
+        self.cv1 = DepthwiseConvBlock(in_channels=c1, out_channels=2 * self.c, kernel_size=1, stride=1)
+        self.cv2 = DepthwiseConvBlock(in_channels=(2 + n) * self.c, out_channels=c2, kernel_size=1, stride=1)
+        # Assuming DWBottleneck also uses DepthwiseConvBlock; adjust if it has its own version
+        self.m = nn.ModuleList(DWBottleneck(self.c, self.c, shortcut, g, k=((3, 3), (3, 3)), e=1.0) for _ in range(n))
 
     def forward(self, x):
         """Forward pass through C2f layer."""
@@ -413,7 +411,7 @@ class DWC2f(nn.Module):
         y = [y[0], y[1]]
         y.extend(m(y[-1]) for m in self.m)
         return self.cv2(torch.cat(y, 1))
-
+        
 class DWC2f_Attn(nn.Module):
     """CSP Bottleneck with 2 convolutions and ECA attention."""
 
@@ -978,9 +976,9 @@ class DWC3k2(DWC2f):
         """Initializes the C3k2 module, a faster CSP Bottleneck with 2 convolutions and optional C3k blocks."""
         super().__init__(c1, c2, n, shortcut, g, e)
         self.m = nn.ModuleList(
-            DWC3k(self.c, self.c, 2, shortcut, g, bn_momentum=bn_momentum, bn_eps=bn_eps) if c3k else DWBottleneck(self.c, self.c, shortcut, g, bn_momentum=bn_momentum, bn_eps=bn_eps) for _ in range(n)
+            DWC3k(self.c, self.c, 2, shortcut, g) if c3k else DWBottleneck(self.c, self.c, shortcut, g) for _ in range(n)
         )
-
+        
 class DWC3k2_Attn(DWC2f_Attn):
     """Faster Implementation of CSP Bottleneck with 2 convolutions."""
 
