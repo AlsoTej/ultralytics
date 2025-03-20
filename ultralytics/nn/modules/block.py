@@ -82,10 +82,8 @@ class DepthwiseConvBlock(nn.Module):
     """
     def __init__(self, c1, c2, k=1, s=1, p=0, d=1, freeze_bn=False):
         super(DepthwiseConvBlock, self).__init__()
-        self.depthwise = nn.Conv2d(c1, c1, kernel_size=k, stride=s, 
-                                 padding=p, dilation=d, groups=c1, bias=False)
-        self.pointwise = nn.Conv2d(c1, c2, kernel_size=1, 
-                                   stride=1, padding=0, dilation=1, groups=1, bias=False)
+        self.depthwise = nn.Conv2d(c1, c1, k, s, p, d, groups=c1, bias=False)
+        self.pointwise = nn.Conv2d(c1, c2, 1, 1, 0, 1, groups=1, bias=False)
         
         self.bn = nn.BatchNorm2d(c2, momentum=0.9997, eps=4e-5)
         self.act = nn.ReLU()
