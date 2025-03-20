@@ -83,6 +83,11 @@ from ultralytics.nn.modules import (
     CoordAtt,
     CoordinateAttention,
     SKLayer,
+    DepthwiseConvBlock,
+    ConvBlock,
+    BiFPNBlock,
+    BiFPN,
+
 )
 
 from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, DepthwiseConvBlock
