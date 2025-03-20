@@ -576,16 +576,14 @@ class DWBottleneck(nn.Module):
         """Initializes a standard bottleneck module with optional shortcut connection and configurable parameters."""
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        # self.cv1 = Conv(c1, c_, k[0], 1)
-        # self.cv2 = Conv(c_, c2, k[1], 1, g=g)
-        self.cv1 = DepthwiseConvBlock(c1=c1, c2=c_, k=k[0], s=1, bn_momentum=bn_momentum, bn_eps=bn_eps)  # changed args
-        self.cv2 = DepthwiseConvBlock(c1=c_, c2=c2, k=k[1], s=1, bn_momentum=bn_momentum, bn_eps=bn_eps)  # changed args
+        self.cv1 = DepthwiseConvBlock(in_channels=c1, out_channels=c_, kernel_size=k[0], stride=1)
+        self.cv2 = DepthwiseConvBlock(in_channels=c_, out_channels=c2, kernel_size=k[1], stride=1)
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
         """Applies the YOLO FPN to input data."""
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
-
+        
 class BottleneckCSP(nn.Module):
     """CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks."""
 
@@ -1023,9 +1021,7 @@ class DWC3k(C3):
         """Initializes the C3k module with specified channels, number of layers, and configurations."""
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)  # hidden channels
-        # self.m = nn.Sequential(*(RepBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
-        self.m = nn.Sequential(*(DWBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0, bn_momentum=bn_momentum, bn_eps=bn_eps) for _ in range(n)))
-
+        self.m = nn.Sequential(*(DWBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))        
 class C3kGhost(C3):
     """Ghost version of C3k."""
 
