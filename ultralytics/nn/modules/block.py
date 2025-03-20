@@ -1021,14 +1021,16 @@ class C3k(C3):
         # self.m = nn.Sequential(*(RepBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
         self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
 
-class DWC3k(nn.Module):
-    """C3k module using depthwise separable convolutions."""
-
+class DWC3k(C3k):
+    """Depthwise Separable version of C3k."""
+    
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, k=3):
-        """Initializes the DWC3k module with depthwise convolutions."""
-        super().__init__()
-        c_ = int(c2 * e)  # hidden channels
-        self.m = nn.Sequential(*(DWBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
+        """Initializes the DWC3k module using depthwise convolutions."""
+        super().__init__(c1, c2, n, shortcut, g, e, k)
+        self.cv1 = DepthwiseConvBlock(c1, self.c, 1, 1)  # Use depthwise
+        self.cv2 = DepthwiseConvBlock(c1, self.c, 1, 1)
+        self.cv3 = DepthwiseConvBlock(2 * self.c, c2, 1)
+        self.m = nn.Sequential(*(DWBottleneck(self.c, self.c, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
         
 class C3kGhost(C3):
     """Ghost version of C3k."""
