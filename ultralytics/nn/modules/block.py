@@ -64,10 +64,18 @@ __all__ = (
     "DepthwiseConvBlock",
     "ConvBlock",
     "BiFPNBlock",
-    "BiFPN",    
+    "BiFPN", 
+    "Select",
     
 )
-
+class Select(nn.Module):
+    def __init__(self, index):
+        super(Select, self).__init__()
+        self.index = index
+    
+    def forward(self, x):
+        return x[self.index]
+        
 class DepthwiseConvBlock(nn.Module):
     """
     Depthwise separable convolution.
