@@ -77,24 +77,30 @@ class Select(nn.Module):
         return x[self.index]
 
 class DepthwiseConvBlock(nn.Module):
-    def __init__(self, c1, c2, k=1, s=1, padding=0, dilation=1, freeze_bn=False):
+    def __init__(self, c1, c2, kernel_size=1, stride=1, padding=0, dilation=1, freeze_bn=False, bn_momentum=0.9, bn_eps=1e-5):
         super(DepthwiseConvBlock, self).__init__()
         self.depthwise = nn.Conv2d(
-            c1, c1, k, s, padding, dilation, groups=c1, bias=False
+            c1, c1, kernel_size, stride, padding, dilation, groups=c1, bias=False
         )
         self.pointwise = nn.Conv2d(c1, c2, kernel_size=1, bias=False)
-        
-        self.bn = nn.BatchNorm2d(c2, momentum=0.9, eps=1e-5)
+
+        # BatchNorm with proper momentum and epsilon
+        self.bn = nn.BatchNorm2d(c2, momentum=bn_momentum, eps=bn_eps)
+        if freeze_bn:
+            for param in self.bn.parameters():
+                param.requires_grad = False
+
         self.act = nn.Mish()
-        self.residual = (c1 == c2 and s == 1)
+        self.residual = (c1 == c2 and stride == 1)
+        self.residual_conv = nn.Identity() if self.residual else nn.Conv2d(c1, c2, kernel_size=1, bias=False)
 
     def forward(self, x):
-        identity = x
+        identity = self.residual_conv(x)  # Ensure matching dimensions
         x = self.depthwise(x)
         x = self.pointwise(x)
         x = self.bn(x)
         x = self.act(x)
-        return x + identity if self.residual else x
+        return x + identity if self.residual else x  # Add residual connection
         
 class ConvBlock(nn.Module):
     """
