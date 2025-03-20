@@ -77,27 +77,28 @@ class Select(nn.Module):
         return x[self.index]
 
 class DepthwiseConvBlock(nn.Module):
-    """
-    Depthwise seperable convolution. 
-    
-    
-    """
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, freeze_bn=False):
-        super(DepthwiseConvBlock,self).__init__()
-        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size, stride, 
-                               padding, dilation, groups=in_channels, bias=False)
-        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, 
-                                   stride=1, padding=0, dilation=1, groups=1, bias=False)
+    def __init__(self, c1, c2, kernel_size=1, stride=1, padding=0, dilation=1, freeze_bn=False):
+        super(DepthwiseConvBlock, self).__init__()
+        self.depthwise = nn.Conv2d(
+            c1, c1, kernel_size, stride,
+            padding, dilation, groups=c1, bias=False
+        )
+        self.pointwise = nn.Conv2d(
+            c1, c2, kernel_size=1,
+            stride=1, padding=0, dilation=1, groups=1, bias=False
+        )
         
-        
-        self.bn = nn.BatchNorm2d(out_channels, momentum=0.9997, eps=4e-5)
+        self.bn = nn.BatchNorm2d(c2, momentum=0.9, eps=1e-5)
         self.act = nn.Mish()
-        
-    def forward(self, inputs):
-        x = self.depthwise(inputs)
+        self.residual = (c1 == c2 and stride == 1)
+
+    def forward(self, x):
+        identity = x
+        x = self.depthwise(x)
         x = self.pointwise(x)
         x = self.bn(x)
-        return self.act(x)
+        x = self.act(x)
+        return x + identity if self.residual else x
         
 class ConvBlock(nn.Module):
     """
