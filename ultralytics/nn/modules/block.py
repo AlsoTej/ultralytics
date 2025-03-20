@@ -75,41 +75,29 @@ class Select(nn.Module):
     
     def forward(self, x):
         return x[self.index]
-        
-import torch
-import torch.nn as nn
 
 class DepthwiseConvBlock(nn.Module):
     """
-    Depthwise separable convolution with optional residual connections.
+    Depthwise seperable convolution. 
+    
+    
     """
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, freeze_bn=False):
-        super(DepthwiseConvBlock, self).__init__()
-        self.depthwise = nn.Conv2d(
-            in_channels, in_channels, kernel_size, stride,
-            padding, dilation, groups=in_channels, bias=False
-        )
-        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+        super(DepthwiseConvBlock,self).__init__()
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size, stride, 
+                               padding, dilation, groups=in_channels, bias=False)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, 
+                                   stride=1, padding=0, dilation=1, groups=1, bias=False)
         
-        # BatchNorm with optional freezing
-        self.bn = nn.BatchNorm2d(out_channels, momentum=0.9, eps=1e-5)
-        if freeze_bn:
-            for param in self.bn.parameters():
-                param.requires_grad = False
-
-        self.act = nn.Mish()  # Use Mish for better gradient flow
-
-        # Residual connection: Only if shape matches
-        self.residual = (in_channels == out_channels and stride == 1)
-        self.residual_conv = nn.Identity() if self.residual else nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
-
-    def forward(self, x):
-        identity = self.residual_conv(x)  # Ensure matching dimensions
-        x = self.depthwise(x)
+        
+        self.bn = nn.BatchNorm2d(out_channels, momentum=0.9997, eps=4e-5)
+        self.act = nn.Mish()
+        
+    def forward(self, inputs):
+        x = self.depthwise(inputs)
         x = self.pointwise(x)
         x = self.bn(x)
-        x = self.act(x)
-        return x + self.bn(identity) if self.residual else x  # Normalize residual before addition
+        return self.act(x)
         
 class ConvBlock(nn.Module):
     """
