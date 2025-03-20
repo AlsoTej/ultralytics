@@ -76,9 +76,12 @@ class Select(nn.Module):
     def forward(self, x):
         return x[self.index]
         
+import torch
+import torch.nn as nn
+
 class DepthwiseConvBlock(nn.Module):
     """
-    Depthwise separable convolution.
+    Depthwise separable convolution with optional residual connections.
     """
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, freeze_bn=False):
         super(DepthwiseConvBlock, self).__init__()
@@ -86,20 +89,27 @@ class DepthwiseConvBlock(nn.Module):
             in_channels, in_channels, kernel_size, stride,
             padding, dilation, groups=in_channels, bias=False
         )
-        self.pointwise = nn.Conv2d(
-            in_channels, out_channels, kernel_size=1,
-            stride=1, padding=0, dilation=1, groups=1, bias=False
-        )
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
         
-        # Adjusted momentum for potential stability with small batches
+        # BatchNorm with optional freezing
         self.bn = nn.BatchNorm2d(out_channels, momentum=0.9, eps=1e-5)
-        self.act = nn.Mish()  # Changed from ReLU to Mish
-        
-    def forward(self, inputs):
-        x = self.depthwise(inputs)
+        if freeze_bn:
+            for param in self.bn.parameters():
+                param.requires_grad = False
+
+        self.act = nn.Mish()  # Use Mish for better gradient flow
+
+        # Residual connection: Only if shape matches
+        self.residual = (in_channels == out_channels and stride == 1)
+        self.residual_conv = nn.Identity() if self.residual else nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+
+    def forward(self, x):
+        identity = self.residual_conv(x)  # Ensure matching dimensions
+        x = self.depthwise(x)
         x = self.pointwise(x)
         x = self.bn(x)
-        return self.act(x)
+        x = self.act(x)
+        return x + self.bn(identity) if self.residual else x  # Normalize residual before addition
         
 class ConvBlock(nn.Module):
     """
@@ -149,18 +159,19 @@ class BiFPNBlock(nn.Module):
         w2 = self.w2_relu(self.w2)
         w2 /= torch.sum(w2, dim=0) + self.epsilon
         
+        # Top-Down Pathway with Residuals
         p7_td = p7_x
-        p6_td = self.p6_td(w1[0, 0] * p6_x + w1[1, 0] * F.interpolate(p7_td, scale_factor=2, mode='bilinear', align_corners=False))
-        p5_td = self.p5_td(w1[0, 1] * p5_x + w1[1, 1] * F.interpolate(p6_td, scale_factor=2, mode='bilinear', align_corners=False))
-        p4_td = self.p4_td(w1[0, 2] * p4_x + w1[1, 2] * F.interpolate(p5_td, scale_factor=2, mode='bilinear', align_corners=False))
-        p3_td = self.p3_td(w1[0, 3] * p3_x + w1[1, 3] * F.interpolate(p4_td, scale_factor=2, mode='bilinear', align_corners=False))
-        
-        # Calculate Bottom-Up Pathway with nearest interpolation
+        p6_td = self.p6_td(w1[0, 0] * p6_x + w1[1, 0] * F.interpolate(p7_td, scale_factor=2, mode='bilinear', align_corners=False)) + p6_x
+        p5_td = self.p5_td(w1[0, 1] * p5_x + w1[1, 1] * F.interpolate(p6_td, scale_factor=2, mode='bilinear', align_corners=False)) + p5_x
+        p4_td = self.p4_td(w1[0, 2] * p4_x + w1[1, 2] * F.interpolate(p5_td, scale_factor=2, mode='bilinear', align_corners=False)) + p4_x
+        p3_td = self.p3_td(w1[0, 3] * p3_x + w1[1, 3] * F.interpolate(p4_td, scale_factor=2, mode='bilinear', align_corners=False)) + p3_x
+
+        # Bottom-Up Pathway with Residuals
         p3_out = p3_td
-        p4_out = self.p4_out(w2[0, 0] * p4_x + w2[1, 0] * p4_td + w2[2, 0] * F.interpolate(p3_out, scale_factor=0.5, mode='nearest'))
-        p5_out = self.p5_out(w2[0, 1] * p5_x + w2[1, 1] * p5_td + w2[2, 1] * F.interpolate(p4_out, scale_factor=0.5, mode='nearest'))
-        p6_out = self.p6_out(w2[0, 2] * p6_x + w2[1, 2] * p6_td + w2[2, 2] * F.interpolate(p5_out, scale_factor=0.5, mode='nearest'))
-        p7_out = self.p7_out(w2[0, 3] * p7_x + w2[1, 3] * p7_td + w2[2, 3] * F.interpolate(p6_out, scale_factor=0.5, mode='nearest'))
+        p4_out = self.p4_out(w2[0, 0] * p4_x + w2[1, 0] * p4_td + w2[2, 0] * F.interpolate(p3_out, scale_factor=0.5, mode='nearest')) + p4_x
+        p5_out = self.p5_out(w2[0, 1] * p5_x + w2[1, 1] * p5_td + w2[2, 1] * F.interpolate(p4_out, scale_factor=0.5, mode='nearest')) + p5_x
+        p6_out = self.p6_out(w2[0, 2] * p6_x + w2[1, 2] * p6_td + w2[2, 2] * F.interpolate(p5_out, scale_factor=0.5, mode='nearest')) + p6_x
+        p7_out = self.p7_out(w2[0, 3] * p7_x + w2[1, 3] * p7_td + w2[2, 3] * F.interpolate(p6_out, scale_factor=0.5, mode='nearest')) + p7_x
 
         return [p3_out, p4_out, p5_out, p6_out, p7_out]  # All five outputs; adjust if needed
         
