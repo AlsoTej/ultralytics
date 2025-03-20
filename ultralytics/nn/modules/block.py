@@ -391,22 +391,18 @@ class DWC2f(nn.Module):
     """Faster Implementation of CSP Bottleneck with 2 convolutions."""
 
     def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5, bn_momentum=0.1, bn_eps=1e-5):
-        """Initializes a CSP bottleneck with 2 convolutions and n Bottleneck blocks for faster processing."""
         super().__init__()
         self.c = int(c2 * e)  # hidden channels
         self.cv1 = DepthwiseConvBlock(in_channels=c1, out_channels=2 * self.c, kernel_size=1, stride=1)
         self.cv2 = DepthwiseConvBlock(in_channels=(2 + n) * self.c, out_channels=c2, kernel_size=1, stride=1)
-        # Assuming DWBottleneck also uses DepthwiseConvBlock; adjust if it has its own version
-        self.m = nn.ModuleList(DWBottleneck(self.c, self.c, shortcut, g, k=((3, 3), (3, 3)), e=1.0) for _ in range(n))
+        self.m = nn.ModuleList(DWBottleneck(self.c, self.c, shortcut, g, k=(3, 3), e=1.0) for _ in range(n))
 
     def forward(self, x):
-        """Forward pass through C2f layer."""
         y = list(self.cv1(x).chunk(2, 1))
         y.extend(m(y[-1]) for m in self.m)
         return self.cv2(torch.cat(y, 1))
 
     def forward_split(self, x):
-        """Forward pass using split() instead of chunk()."""
         y = self.cv1(x).split((self.c, self.c), 1)
         y = [y[0], y[1]]
         y.extend(m(y[-1]) for m in self.m)
@@ -576,14 +572,13 @@ class DWBottleneck(nn.Module):
         """Initializes a standard bottleneck module with optional shortcut connection and configurable parameters."""
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = DepthwiseConvBlock(in_channels=c1, out_channels=c_, kernel_size=k[0], stride=1)
-        self.cv2 = DepthwiseConvBlock(in_channels=c_, out_channels=c2, kernel_size=k[1], stride=1)
+        self.cv1 = DepthwiseConvBlock(in_channels=c1, out_channels=c_, kernel_size=k[0], stride=1, padding=1)
+        self.cv2 = DepthwiseConvBlock(in_channels=c_, out_channels=c2, kernel_size=k[1], stride=1, padding=1)
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
         """Applies the YOLO FPN to input data."""
-        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
-        
+        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))        
 class BottleneckCSP(nn.Module):
     """CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks."""
 
@@ -971,7 +966,6 @@ class DWC3k2(DWC2f):
     """Faster Implementation of CSP Bottleneck with 2 convolutions."""
 
     def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True, bn_momentum=0.1, bn_eps=1e-5):
-        """Initializes the C3k2 module, a faster CSP Bottleneck with 2 convolutions and optional C3k blocks."""
         super().__init__(c1, c2, n, shortcut, g, e)
         self.m = nn.ModuleList(
             DWC3k(self.c, self.c, 2, shortcut, g) if c3k else DWBottleneck(self.c, self.c, shortcut, g) for _ in range(n)
