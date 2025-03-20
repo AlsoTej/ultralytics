@@ -68,7 +68,10 @@ from .block import (
     DWBottleneck,
     DWC2f_Attn,
     DWC3k2_Attn,
-    
+    DepthwiseConvBlock,
+    ConvBlock,
+    BiFPNBlock,
+    BiFPN,
 )
 
 from .conv import (
@@ -205,4 +208,9 @@ __all__ = (
     "h_swish",
     "CoordAtt",
     "CoordinateAttention",
+    "DepthwiseConvBlock",
+    "ConvBlock",
+    "BiFPNBlock",
+    "BiFPN",
+
 )
