@@ -72,6 +72,7 @@ from .block import (
     ConvBlock,
     BiFPNBlock,
     BiFPN,
+    Select,
 )
 
 from .conv import (
@@ -212,5 +213,5 @@ __all__ = (
     "ConvBlock",
     "BiFPNBlock",
     "BiFPN",
-
+    "Select",
 )
