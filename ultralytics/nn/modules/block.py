@@ -93,7 +93,7 @@ class DepthwiseConvBlock(nn.Module):
         
         # Adjusted momentum for potential stability with small batches
         self.bn = nn.BatchNorm2d(out_channels, momentum=0.9, eps=1e-5)
-        self.act = nn.SiLU()  # Changed from ReLU to SiLU
+        self.act = nn.Mish()  # Changed from ReLU to Mish
         
     def forward(self, inputs):
         x = self.depthwise(inputs)
@@ -109,7 +109,7 @@ class ConvBlock(nn.Module):
         super(ConvBlock, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding)
         self.bn = nn.BatchNorm2d(out_channels, momentum=0.9, eps=1e-5)  # Adjusted momentum
-        self.act = nn.SiLU()  # Changed from ReLU to SiLU
+        self.act = nn.Mish()  # Changed from ReLU to Mish
 
     def forward(self, inputs):
         x = self.conv(inputs)
