@@ -39,9 +39,9 @@ backbone:
 
 head:
   - [[20, 22, 24], 1, BiFPN, [256, 2]]   # 25: BiFPN, outputs [p3_out, p4_out, p5_out, p6_out, p7_out]
-  - [10, 1, Select, [0]]                 # 26: Select p3_out (index 0 from BiFPN output)
-  - [10, 1, Select, [1]]              # 27: Select p4_out (index 1 from BiFPN output)
-  - [10, 1, Select, [2]]              # 28: Select p5_out (index 2 from BiFPN output)
-  - [10, 1, Select, [3]]              # 29: Select p6_out (index 2 from BiFPN output)
-  - [10, 1, Select, [4]]              # 30: Select p7_out (index 2 from BiFPN output)
+  - [25, 1, Select, [0]]                 # 26: Select p3_out (index 0 from BiFPN output)
+  - [25, 1, Select, [1]]              # 27: Select p4_out (index 1 from BiFPN output)
+  - [25, 1, Select, [2]]              # 28: Select p5_out (index 2 from BiFPN output)
+  - [25, 1, Select, [3]]              # 29: Select p6_out (index 2 from BiFPN output)
+  - [25, 1, Select, [4]]              # 30: Select p7_out (index 2 from BiFPN output)
   - [[26, 27, 28, 29, 30], 1, Detect, [nc]]  # Detect head using p3_out, p4_out, p5_out
