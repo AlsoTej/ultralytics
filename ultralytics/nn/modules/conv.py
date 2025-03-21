@@ -25,6 +25,7 @@ __all__ = (
     "DepthwiseConvBlock",
     "BiFPN_Concat2",
     "BiFPN_Concat3",
+    "BiFPN_Concat3_2",
 )
 # class DepthwiseConvBlock(nn.Module):
 #     """Depthwise Separable Convolution with args(ch_in, ch_out, kernel, stride, padding, dilation, activation)."""
@@ -162,6 +163,87 @@ class BiFPN_Concat3(nn.Module):
         return torch.cat(x, self.d)
         # return weight[0] * x[0] + weight[1] * x[1] + weight[2] * x[2]
 
+class BiFPN_Concat3_2(nn.Module):
+    def __init__(self, in_channels, out_channels, target_size=None, reduction=16):
+        """
+        Initialize the BiFPN_Concat3 module for feature fusion.
+
+        Args:
+            in_channels (list): List of input channel sizes (e.g., [256, 512, 1024]).
+            out_channels (int): Number of output channels (e.g., 128).
+            target_size (tuple, optional): Target spatial size (H, W) for alignment. Defaults to first input size.
+            reduction (int): Channel reduction factor for Squeeze-and-Excitation (default: 16).
+        """
+        super(BiFPN_Concat3, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.target_size = target_size
+
+        # 1x1 convolutions to align input channels
+        self.input_convs = nn.ModuleList([
+            nn.Conv2d(ch, out_channels, kernel_size=1) for ch in in_channels
+        ])
+
+        # Adaptive weighting with Squeeze-and-Excitation
+        self.se_weights = nn.ModuleList([
+            nn.Sequential(
+                nn.AdaptiveAvgPool2d(1),  # Global average pooling
+                nn.Conv2d(out_channels, out_channels // reduction, kernel_size=1),
+                nn.ReLU(),
+                nn.Conv2d(out_channels // reduction, out_channels, kernel_size=1),
+                nn.Sigmoid()  # Channel-wise weights
+            ) for _ in in_channels
+        ])
+
+        # 1x1 convolution to combine concatenated features
+        self.combination_conv = nn.Conv2d(len(in_channels) * out_channels, out_channels, kernel_size=1)
+
+        # Batch normalization for output stability
+        self.batch_norm = nn.BatchNorm2d(out_channels)
+
+    def forward(self, x):
+        """
+        Forward pass to fuse input features.
+
+        Args:
+            x (list): List of input feature maps with shapes [(B, C1, H1, W1), (B, C2, H2, W2), ...].
+
+        Returns:
+            torch.Tensor: Fused feature map of shape (B, out_channels, H_target, W_target).
+        """
+        assert len(x) == len(self.in_channels), "Number of inputs must match in_channels length"
+
+        # Use first input size as default target if not specified
+        target_size = self.target_size if self.target_size else x[0].shape[2:]
+
+        # Step 1: Align channels and spatial sizes
+        aligned_inputs = []
+        for i, feature_map in enumerate(x):
+            # Project to out_channels
+            projected = self.input_convs[i](feature_map)
+            # Resize to target spatial size
+            aligned = F.interpolate(projected, size=target_size, mode='bilinear', align_corners=False)
+            aligned_inputs.append(aligned)
+
+        # Step 2: Apply adaptive weighting
+        weighted_features = []
+        for i, aligned in enumerate(aligned_inputs):
+            se_weight = self.se_weights[i](aligned)  # (B, out_channels, 1, 1)
+            weighted = aligned * se_weight  # Element-wise weighting
+            weighted_features.append(weighted)
+
+        # Step 3: Concatenate weighted features
+        concatenated = torch.cat(weighted_features, dim=1)  # (B, len(in_channels)*out_channels, H, W)
+
+        # Step 4: Combine features and stabilize
+        combined = self.combination_conv(concatenated)
+        combined = self.batch_norm(combined)
+
+        # Step 5: Skip connection (sum aligned inputs)
+        skip_sum = sum(aligned_inputs)
+        output = combined + skip_sum
+
+        return output
         
 def autopad(k, p=None, d=1):  # kernel, padding, dilation
     """Pad to 'same' shape outputs."""
