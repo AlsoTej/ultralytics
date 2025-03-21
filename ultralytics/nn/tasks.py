@@ -90,7 +90,7 @@ from ultralytics.nn.modules import (
     Select,
 )
 
-from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, DepthwiseConvBlock
+from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, BiFPN_Concat3_2,  DepthwiseConvBlock
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
 from ultralytics.utils.loss import (
@@ -1094,6 +1094,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = args[1] if args[3] else args[1] * 4
         elif m is torch.nn.BatchNorm2d:
             args = [ch[f]]
+            
         elif m in [Concat, BiFPN_Concat2, BiFPN_Concat3]:
             c2 = sum(ch[x] for x in f)
         #Add bifpn_concat structure
@@ -1101,6 +1102,13 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # c2 = sum(ch[x] for x in f)
         # elif m in [BiFPN_Concat2, BiFPN_Concat3]:
         #     c2 = ch[f[0]]
+        
+        elif m is BiFPN_Concat3_2:
+            in_channels = [ch[x] for x in f]  # Compute input channels from f
+            out_channels = args[0]            # Output channels from args[0]
+            args = [in_channels, *args]       # Prepend in_channels to args
+            c2 = out_channels                 # Set output channels
+            
         elif m in frozenset({Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}):
             args.append([ch[x] for x in f])
             if m is Segment:
