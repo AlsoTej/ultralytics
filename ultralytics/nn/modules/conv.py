@@ -174,7 +174,7 @@ class BiFPN_Concat3_2(nn.Module):
             target_size (tuple, optional): Target spatial size (H, W) for alignment. Defaults to first input size.
             reduction (int): Channel reduction factor for Squeeze-and-Excitation (default: 16).
         """
-        super(BiFPN_Concat3, self).__init__()
+        super(BiFPN_Concat3_2, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.target_size = target_size
