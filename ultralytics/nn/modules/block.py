@@ -980,6 +980,7 @@ class DWC3k2(DWC2f):
         self.m = nn.ModuleList(
             DWC3k(self.c, self.c, 2, shortcut, g, bn_momentum=bn_momentum, bn_eps=bn_eps) if c3k else DWBottleneck(self.c, self.c, shortcut, g, bn_momentum=bn_momentum, bn_eps=bn_eps) for _ in range(n)
         )
+        
 class DWC3k2_Attn(DWC2f_Attn):
     """Faster Implementation of CSP Bottleneck with 2 convolutions."""
 
