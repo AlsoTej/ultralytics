@@ -93,6 +93,7 @@ from .conv import (
     DepthwiseConvBlock,
     BiFPN_Concat2,
     BiFPN_Concat3,
+    BiFPN_Concat3_2,
 )
 from .head import OBB, Classify, Detect, Pose, RTDETRDecoder, Segment, WorldDetect, v10Detect
 from .transformer import (
@@ -214,4 +215,5 @@ __all__ = (
     "BiFPNBlock",
     "BiFPN",
     "Select",
+    "BiFPN_Concat3_2",
 )
