@@ -1,0 +1,7 @@
+path: /kaggle/input/dfire-yolo-1/data
+train: /kaggle/input/dfire-yolo-1/data/images/train
+val: /kaggle/input/dfire-yolo-1/data/images/val
+test: /kaggle/input/dfire-yolo-1/data/images/test
+
+nc: 2
+names: ["smoke", "fire"]
