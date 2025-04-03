@@ -9,34 +9,30 @@ scales: # model compound scaling constants, i.e. 'model=yolo11n.yaml' will call 
   # x: [1.00, 1.50, 512] # summary: 631 layers, 56966176 parameters, 56966160 gradients, 196.0 GFLOPs
 
 backbone:
-  - [-1, 1, TorchVision, [768, "vit_b_16", "DEFAULT", True, 2, True]]  # Output: [1, 768, 40, 40]
-
+  - [-1, 1, ViTBackbone, []]  # 0 - ViT as backbone
+  - [0, 1, Index, [768, 0]]  # 1 - P3/8  (B, 80, 80, 768) -> Layer 4
+  - [0, 1, Index, [768, 1]]  # 2 - P4/16 (B, 40, 40, 768) -> Layer 8
+  - [0, 1, Index, [768, 2]]  # 3 - P5/32 (B, 20, 20, 768) -> Layer 12
+  - [-1, 1, SPPF, [768, 5]]  # 4 - P5/32 with Spatial Pyramid Pooling (20,20)
+  
 head:
-  # Top-down pathway (create higher resolution features)
-  - [-1, 1, Conv, [512, 1, 1]]                   # Reduce channels
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]   # 40×40 -> 80×80 (P3)
-  - [-1, 2, C3k2, [256, False]]                  # P3 refinement
-  
-  # Store P3 for later use
-  - [-1, 1, nn.Identity, []]                     # Store P3 features
-  
-  # Middle level features (P4)
-  - [1, 1, Conv, [512, 1, 1]]                    # Adjust channels for P4
-  - [-1, 2, C3k2, [512, False]]                  # P4 refinement
-  
-  # Bottom-up pathway
-  - [-1, 1, Conv, [512, 3, 2]]                   # 40×40 -> 20×20
-  - [-1, 2, C3k2, [1024, False]]                 # P5 processing
-  
-  # Bottom-up enhancement (P3 → P4)
-  - [3, 1, Conv, [512, 3, 2]]                    # P3 80×80 -> 40×40
-  - [[-1, 5], 1, Concat, [1]]                    # Concat with P4
-  - [-1, 2, C3k2, [512, False]]                  # Enhanced P4
-  
-  # Bottom-up enhancement (P4 → P5)
-  - [-1, 1, Conv, [1024, 3, 2]]                  # Enhanced P4 -> 20×20
-  - [[-1, 7], 1, Concat, [1]]                    # Concat with P5
-  - [-1, 2, C3k2, [1024, False]]                 # Enhanced P5
-  
-  # Detection
-  - [[3, 10, 12], 1, Detect, [nc]]               # Detect(P3, Enhanced-P4, Enhanced-P5)
+  # --- FPN (Feature Pyramid Network) ---
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  # 10 - Upsample P5 to (40, 40)
+  - [[-1, 2], 1, Concat, [1]]                  # 11 - Concatenate with P4 from backbone
+  - [-1, 2, C3k2, [768, False]]                # 12 - Refine P4 (40, 40)
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 13 - Upsample P4 to (80, 80)
+  - [[-1, 1], 1, Concat, [1]]                  # 14 - Concatenate with P3 from backbone
+  - [-1, 2, C3k2, [768, False]]                # 15 - Refine P3 (80, 80) (P3/8-small)
+
+  # --- PANet (Bottom-Up Pathway) ---
+  - [-1, 1, Conv, [768, 3, 2]]                 # 16 - Downsample P3 (80, 80) -> (40, 40)
+  - [[-1, 12], 1, Concat, [1]]                 # 17 - Concatenate with refined P4
+  - [-1, 2, C3k2, [768, False]]                # 18 - Refine P4 (40, 40) (P4/16-medium)
+
+  - [-1, 1, Conv, [768, 3, 2]]                 # 19 - Downsample P4 (40, 40) -> (20, 20)
+  - [[-1, 9], 1, Concat, [1]]                  # 20 - Concatenate with refined P5
+  - [-1, 2, C3k2, [768, True]]                 # 21 - Refine P5 (20, 20) (P5/32-large)
+
+  # --- Detection Head ---
+  - [[15, 18, 21], 1, Detect, [nc]]            # 22 - Detect on P3, P4, P5
