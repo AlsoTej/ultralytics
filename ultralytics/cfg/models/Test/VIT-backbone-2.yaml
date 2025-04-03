@@ -16,23 +16,15 @@ backbone:
   - [-1, 1, SPPF, [768, 5]]  # 4 - P5/32 with Spatial Pyramid Pooling (20,20)
   
 head:
-  # --- FPN (Feature Pyramid Network) ---
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  # 10 - Upsample P5 to (40, 40)
-  - [[-1, 2], 1, Concat, [1]]                  # 11 - Concatenate with P4 from backbone
-  - [-1, 2, C3k2, [768, False]]                # 12 - Refine P4 (40, 40)
-
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 13 - Upsample P4 to (80, 80)
-  - [[-1, 1], 1, Concat, [1]]                  # 14 - Concatenate with P3 from backbone
-  - [-1, 2, C3k2, [768, False]]                # 15 - Refine P3 (80, 80) (P3/8-small)
-
-  # --- PANet (Bottom-Up Pathway) ---
-  - [-1, 1, Conv, [768, 3, 2]]                 # 16 - Downsample P3 (80, 80) -> (40, 40)
-  - [[-1, 12], 1, Concat, [1]]                 # 17 - Concatenate with refined P4
-  - [-1, 2, C3k2, [768, False]]                # 18 - Refine P4 (40, 40) (P4/16-medium)
-
-  - [-1, 1, Conv, [768, 3, 2]]                 # 19 - Downsample P4 (40, 40) -> (20, 20)
-  - [[-1, 9], 1, Concat, [1]]                  # 20 - Concatenate with refined P5
-  - [-1, 2, C3k2, [768, True]]                 # 21 - Refine P5 (20, 20) (P5/32-large)
-
-  # --- Detection Head ---
-  - [[15, 18, 21], 1, Detect, [nc]]            # 22 - Detect on P3, P4, P5
+  # Use the feature maps directly
+  [[-1, 1, Conv, [256, 1, 1]],  # Process feature map 0 (smallest)
+   [-1, 2, C3, [256, False]],  # P3 feature refinement
+   
+   [0, 1, Conv, [512, 1, 1]],  # Process feature map 1 (medium)
+   [-1, 2, C3, [512, False]],  # P4 feature refinement
+   
+   [0, 1, Conv, [1024, 1, 1]],  # Process feature map 2 (largest)
+   [-1, 2, C3, [1024, False]],  # P5 feature refinement
+   
+   # Detection
+   [[1, 3, 5], 1, Detect, [nc]]]  # Detect using all feature maps
