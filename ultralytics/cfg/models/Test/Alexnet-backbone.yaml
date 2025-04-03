@@ -1,42 +1,38 @@
 # Parameters
-nc: 2 # number of classes
-scales: # model compound scaling constants, i.e. 'model=yolo11n.yaml' will call yolo11.yaml with scale 'n'
-  # [depth, width, max_channels]
-  n: [0.50, 0.25, 1024] # summary: 181 layers, 2624080 parameters, 2624064 gradients, 6.6 GFLOPs
-  # s: [0.50, 0.50, 1024] # summary: 181 layers, 9458752 parameters, 9458736 gradients, 21.7 GFLOPs
-  # m: [0.50, 1.00, 512] # summary: 231 layers, 20114688 parameters, 20114672 gradients, 68.5 GFLOPs
-  # l: [1.00, 1.00, 512] # summary: 357 layers, 25372160 parameters, 25372144 gradients, 87.6 GFLOPs
-  # x: [1.00, 1.50, 512] # summary: 357 layers, 56966176 parameters, 56966160 gradients, 196.0 GFLOPs
+nc: 2  # number of classes
+scales:
+  n: [0.50, 0.25, 1024]
 
-# YOLOv8-MobileNetv3 Backbone
+# YOLOv8-AlexNet Backbone
 backbone:
   # [from, repeats, module, args]
-  - [-1, 1, TorchVision, [256, alexnet, "DEFAULT", True, 2, True]]  # 0 - alexnet (truncated, split)
-  - [0, 1, Index, [192, 5]]                                                  # 1 - P3/8  (B, 79, 79, 192)
-  - [0, 1, Index, [256, 12]]                                                 # 2 - P4/16 (B, 39, 39, 112)
-  - [0, 1, Index, [256, 13]]                                                 # 3 - P5/32 (B, 19, 19, 960)
-  - [-1, 1, SPPF, [256, 5]]                                                  # 4 - P5/32 (B, 960, 19, 19)
+  - [-1, 1, TorchVision, [256, alexnet, "DEFAULT", True, 2, True]]  # 0 - alexnet (truncated)
+  - [0, 1, Index, [192, 5]]                                                  # 1 - P3/8  (B, 192, 79, 79)
+  - [0, 1, Index, [256, 12]]                                                 # 2 - P4/16 (B, 256, 39, 39)
+  - [0, 1, Index, [256, 13]]                                                 # 3 - P5/32 (B, 256, 19, 19)
+
 
 head:
-  - [-1, 1, nn.Identity, []]
-  - [-1, 1, Conv, [39, 1, 1]]                 # Transform 19 channels → 39 channels
-  - [[-1, 2], 1, Concat, [1]]                 # 6 - (B, 960+112, 40, 40) = (B, 1072, 40, 40)
-  - [-1, 3, C2f, [256, True]]                  # 7 - (B, 256, 39, 39)  FPN P4
+  - [-1, 1, nn.Identity, []]                                                # Placeholder, not strictly needed
 
-  - [-1, 1, Conv, [79, 1, 1]]                 # Transform 19 channels → 39 channels
-  - [[-1, 1], 1, Concat, [1]]                 # 9 - (B, 112+40, 80, 80) = (B, 152, 80, 80)
-  - [-1, 3, C2f, [192, True]]                   # 10 - (B, 40, 80, 80) FPN P3
+  # --- FPN (Top-Down) Pathway ---
+  - [-1, 1, Conv, [128, 1, 1]]          # 4 - P5: Reduce channels (B, 256, 19, 19) -> (B, 128, 19, 19)
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]  # 5 - Upsample P5 to match P4 size (B, 128, 39, 39)
+  - [[-1, 2], 1, Concat, [1]]          # 6 - Concatenate upsampled P5 with P4 (B, 128+256, 39, 39) -> (B, 384, 39, 39)
+  - [-1, 3, C2f, [128, True]]           # 7 - C2f after P4 concatenation (B, 384, 39, 39) -> (B, 128, 39, 39)
+
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]  # 8 - Upsample to match P3 size (B, 128, 79, 79)
+  - [[-1, 1], 1, Concat, [1]]          # 9 - Concatenate upsampled with P3 (B, 128+192, 79, 79) -> (B, 320, 79, 79)
+  - [-1, 3, C2f, [64, True]]            # 10 - C2f after P3 concatenation (B, 320, 79, 79) -> (B, 64, 79, 79)
 
   # --- PANet (Bottom-Up) Pathway ---
-  - [-1, 1, Conv, [39, 1, 1]]                 # 11Transform 19 channels → 39 channels
-  - [-1, 1, Conv, [192, 3, 1]]                   # 12 - (B, 40, 40, 40) Downsample P3
-  - [[-1, 7], 1, Concat, [1]]                  # 13 - (B, 40+112, 40, 40) = (B, 152, 40, 40)
-  - [-1, 3, C2f, [256, True]]                  # 14 - (B, 112, 40, 40) PANet P4
+  - [-1, 1, Conv, [128, 3, 2]]          # 11 - Downsample P3 (stride=2) (B, 64, 79, 79) -> (B, 128, 39, 39)
+  - [[-1, 7], 1, Concat, [1]]          # 12 - Concatenate with P4 (B, 128+128, 39, 39) -> (B, 256, 39, 39)
+  - [-1, 3, C2f, [128, True]]           # 13 - C2f after P4 concatenation (B, 256, 39, 39) -> (B, 128, 39, 39)
 
-  - [-1, 1, Conv, [19, 1, 1]]                 # 115 Transform 19 channels → 39 channels
-  - [-1, 1, Conv, [256, 3, 1]]                  # 16 - (B, 112, 20, 20) Downsample P4
-  - [[-1, 4], 1, Concat, [1]]                  # 17 - (B, 112+960, 20, 20) = (B, 1072, 20, 20)
-  - [-1, 3, C2f, [256, True]]                  # 18 - (B, 960, 20, 20) PANet P5
+  - [-1, 1, Conv, [256, 3, 2]]          # 14 - Downsample (stride=2) (B, 128, 39, 39) -> (B, 256, 19, 19)
+  - [[-1, 4], 1, Concat, [1]]          # 15 - Concatenate with P5 (B, 256+128, 19, 19) -> (B, 384, 19, 19)
+  - [-1, 3, C2f, [256, True]]           # 16 - C2f after P5 concatenation (B, 384, 19, 19) -> (B, 256, 19, 19)
 
   # --- Detection Head ---
-  - [[10, 14, 18], 1, Detect, [nc]]              # 17 - Detect(P3, P4, P5)
+  - [[10, 13, 16], 1, Detect, [nc]]   # 17 - Detect(P3, P4, P5)
