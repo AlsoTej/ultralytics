@@ -1,5 +1,43 @@
-nc: 1
+nc: 2
+
+scales: # model compound scaling constants, i.e. 'model=yolo11n.yaml' will call yolo11.yaml with scale 'n'
+  # [depth, width, max_channels]
+  n: [0.50, 0.25, 1024] # summary: 319 layers, 2624080 parameters, 2624064 gradients, 6.6 GFLOPs
+  # s: [0.50, 0.50, 1024] # summary: 319 layers, 9458752 parameters, 9458736 gradients, 21.7 GFLOPs
+  # m: [0.50, 1.00, 512] # summary: 409 layers, 20114688 parameters, 20114672 gradients, 68.5 GFLOPs
+  # l: [1.00, 1.00, 512] # summary: 631 layers, 25372160 parameters, 25372144 gradients, 87.6 GFLOPs
+  # x: [1.00, 1.50, 512] # summary: 631 layers, 56966176 parameters, 56966160 gradients, 196.0 GFLOPs
+
 backbone:
-  - [-1, 1, TorchVision, [768, "vit_b_16", "DEFAULT", True, 2, True]]
+  backbone:
+  - [-1, 1, TorchVision, [768, "vit_b_16", "DEFAULT", True, 2, True]]  # Output: [1, 768, 40, 40]
+
 head:
-  - [-1, 1, nn.Identity, []]
+  # Top-down pathway (create higher resolution features)
+  - [-1, 1, Conv, [512, 1, 1]]                   # Reduce channels
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]   # 40×40 -> 80×80 (P3)
+  - [-1, 2, C3k2, [256, False]]                  # P3 refinement
+  
+  # Store P3 for later use
+  - [-1, 1, nn.Identity, []]                     # Store P3 features
+  
+  # Middle level features (P4)
+  - [1, 1, Conv, [512, 1, 1]]                    # Adjust channels for P4
+  - [-1, 2, C3k2, [512, False]]                  # P4 refinement
+  
+  # Bottom-up pathway
+  - [-1, 1, Conv, [512, 3, 2]]                   # 40×40 -> 20×20
+  - [-1, 2, C3k2, [1024, False]]                 # P5 processing
+  
+  # Bottom-up enhancement (P3 → P4)
+  - [3, 1, Conv, [512, 3, 2]]                    # P3 80×80 -> 40×40
+  - [[-1, 5], 1, Concat, [1]]                    # Concat with P4
+  - [-1, 2, C3k2, [512, False]]                  # Enhanced P4
+  
+  # Bottom-up enhancement (P4 → P5)
+  - [-1, 1, Conv, [1024, 3, 2]]                  # Enhanced P4 -> 20×20
+  - [[-1, 7], 1, Concat, [1]]                    # Concat with P5
+  - [-1, 2, C3k2, [1024, False]]                 # Enhanced P5
+  
+  # Detection
+  - [[3, 10, 12], 1, Detect, [nc]]               # Detect(P3, Enhanced-P4, Enhanced-P5)
