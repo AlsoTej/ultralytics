@@ -1,6 +1,6 @@
 nc: 1
 backbone:
-  - [-1, 1, TorchVision, [512, "vgg11", "DEFAULT", True, 2, False]]
+  - [-1, 1, TorchVision, [512, "vgg16", "DEFAULT", True, 2, False]]
 head:
   - [-1, 1, nn.Identity, []]
   - [0, 1, Index, [512, 8]]  # 1 extracts 7th output (1, 512, 80, 80) - 1
