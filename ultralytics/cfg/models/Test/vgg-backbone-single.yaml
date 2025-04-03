@@ -3,9 +3,9 @@ backbone:
   - [-1, 1, TorchVision, [512, "vgg11", "DEFAULT", True, 2, False]]
 head:
   - [-1, 1, nn.Identity, []]
-  - [0, 1, Index, [512, 9]]  # 1 extracts 7th output (1, 512, 80, 80) - 1
-  - [0, 1, Index, [512, 12]] # 2 extracts 9th output (1, 1024, 40, 40) - 2
-  - [0, 1, Index, [512, 13]] #3 extracts 11th output (1, 1024, 20, 20) - 3
+  - [0, 1, Index, [512, 8]]  # 1 extracts 7th output (1, 512, 80, 80) - 1
+  - [0, 1, Index, [512, 11]] # 2 extracts 9th output (1, 1024, 40, 40) - 2
+  - [0, 1, Index, [512, 12]] #3 extracts 11th output (1, 1024, 20, 20) - 3
   - [-1, 1, SPPF, [512, 5]]  #4 - P5/32 (B, 1024, 20, 20)
   
 head:
