@@ -11,7 +11,32 @@ scales: # model compound scaling constants, i.e. 'model=yolo11n.yaml' will call 
 # YOLOv8-MobileNetv3 Backbone
 backbone:
   # [from, repeats, module, args]
-  - [-1, 1, TorchVision, [1000, alexnet, "DEFAULT", True, 2, True]]  # 0 - alexnet (truncated, split)
+  - [-1, 1, TorchVision, [256, alexnet, "DEFAULT", True, 2, True]]  # 0 - alexnet (truncated, split)
+  - [0, 1, Index, [192, 5]]                                                  # 1 - P3/8  (B, 79, 79, 192)
+  - [0, 1, Index, [256, 12]]                                                 # 2 - P4/16 (B, 39, 39, 112)
+  - [0, 1, Index, [256, 13]]                                                 # 3 - P5/32 (B, 19, 19, 960)
+  - [-1, 1, SPPF, [256, 5]]                                                  # 4 - P5/32 (B, 960, 19, 19)
+
 head:
   - [-1, 1, nn.Identity, []]
+  - [-1, 1, Conv, [39, 1, 1]]                 # Transform 19 channels → 39 channels
+  - [[-1, 2], 1, Concat, [1]]                 # 6 - (B, 960+112, 40, 40) = (B, 1072, 40, 40)
+  - [-1, 3, C2f, [256, True]]                  # 7 - (B, 256, 39, 39)  FPN P4
 
+  - [-1, 1, Conv, [79, 1, 1]]                 # Transform 19 channels → 39 channels
+  - [[-1, 1], 1, Concat, [1]]                 # 9 - (B, 112+40, 80, 80) = (B, 152, 80, 80)
+  - [-1, 3, C2f, [192, True]]                   # 10 - (B, 40, 80, 80) FPN P3
+
+  # --- PANet (Bottom-Up) Pathway ---
+  - [-1, 1, Conv, [39, 1, 1]]                 # 11Transform 19 channels → 39 channels
+  - [-1, 1, Conv, [192, 3, 1]]                   # 12 - (B, 40, 40, 40) Downsample P3
+  - [[-1, 7], 1, Concat, [1]]                  # 13 - (B, 40+112, 40, 40) = (B, 152, 40, 40)
+  - [-1, 3, C2f, [256, True]]                  # 14 - (B, 112, 40, 40) PANet P4
+
+  - [-1, 1, Conv, [19, 1, 1]]                 # 115 Transform 19 channels → 39 channels
+  - [-1, 1, Conv, [256, 3, 1]]                  # 16 - (B, 112, 20, 20) Downsample P4
+  - [[-1, 4], 1, Concat, [1]]                  # 17 - (B, 112+960, 20, 20) = (B, 1072, 20, 20)
+  - [-1, 3, C2f, [256, True]]                  # 18 - (B, 960, 20, 20) PANet P5
+
+  # --- Detection Head ---
+  - [[10, 14, 18], 1, Detect, [nc]]              # 17 - Detect(P3, P4, P5)
