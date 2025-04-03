@@ -66,8 +66,58 @@ __all__ = (
     "BiFPNBlock",
     "BiFPN", 
     "Select",
+    "ViTBackbone"
     
 )
+from torchvision.models.vision_transformer import vit_b_16
+
+class ViTBackbone(nn.Module):
+    def __init__(self, pretrained=True):
+        super().__init__()
+        self.model = vit_b_16(pretrained=pretrained)
+
+        # Hook layers: Extract features from layers 4, 8, and 12
+        self.hook_layers = [4, 8, 12]  # Transformer block indices
+        self.feature_maps = {}  # Store intermediate outputs
+
+        # Register hooks on selected transformer blocks
+        for i, block in enumerate(self.model.encoder.layers):
+            if i in self.hook_layers:
+                block.register_forward_hook(self._hook_fn(i))
+
+    def _hook_fn(self, layer_idx):
+        """Hook function to capture intermediate outputs."""
+        def hook(module, input, output):
+            self.feature_maps[layer_idx] = output  # Store output from this layer
+        return hook
+
+    def forward(self, x):
+        """Forward pass through ViT."""
+        self.feature_maps = {}  # Reset hooks
+        _ = self.model(x)  # Run forward pass to capture intermediate layers
+
+        # Extract features and reshape them
+        features = []
+        for layer in self.hook_layers:
+            if layer in self.feature_maps:
+                f = self._process_feature_map(self.feature_maps[layer], x.shape)
+                features.append(f)
+
+        return features
+
+    def _process_feature_map(self, feature_map, input_shape):
+        """
+        Convert ViT feature map (B, N, C) into a spatial format (B, C, H, W).
+        """
+        B, N, C = feature_map.shape  # (Batch, Patches, Channels)
+        H, W = input_shape[2] // 16, input_shape[3] // 16  # Assuming 16x16 patches
+
+        # Reshape sequence (N = H * W) into (H, W)
+        feature_map = feature_map[:, 1:, :]  # Remove CLS token
+        feature_map = feature_map.permute(0, 2, 1).reshape(B, C, H, W)
+
+        return feature_map
+
 class Select(nn.Module):
     def __init__(self, index):
         super(Select, self).__init__()
