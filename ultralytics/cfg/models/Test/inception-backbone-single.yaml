@@ -1,0 +1,5 @@
+nc: 1
+backbone:
+  - [-1, 1, TorchVision, [768, "inception_v3", "DEFAULT", True, 2, False]]
+head:
+  - [-1, 1, nn.Identity, []]
