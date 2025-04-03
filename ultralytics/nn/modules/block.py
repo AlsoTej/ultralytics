@@ -70,17 +70,20 @@ __all__ = (
     
 )
 from torchvision.models.vision_transformer import vit_b_16
+from torchvision import transforms
 
 class ViTBackbone(nn.Module):
     def __init__(self, pretrained=True):
         super().__init__()
         self.model = vit_b_16(pretrained=pretrained)
-
-        # Hook layers: Extract features from layers 4, 8, and 12
-        self.hook_layers = [4, 8, 12]  # Transformer block indices
-        self.feature_maps = {}  # Store intermediate outputs
-
-        # Register hooks on selected transformer blocks
+        
+        # Add a resize transform to ensure images are 224×224
+        self.resize = transforms.Resize((224, 224), antialias=True)
+        
+        # Rest of your initialization code remains the same
+        self.hook_layers = [4, 8, 12]
+        self.feature_maps = {}
+        
         for i, block in enumerate(self.model.encoder.layers):
             if i in self.hook_layers:
                 block.register_forward_hook(self._hook_fn(i))
@@ -88,15 +91,19 @@ class ViTBackbone(nn.Module):
     def _hook_fn(self, layer_idx):
         """Hook function to capture intermediate outputs."""
         def hook(module, input, output):
-            self.feature_maps[layer_idx] = output  # Store output from this layer
+            self.feature_maps[layer_idx] = output
         return hook
 
     def forward(self, x):
         """Forward pass through ViT."""
-        self.feature_maps = {}  # Reset hooks
-        _ = self.model(x)  # Run forward pass to capture intermediate layers
-
-        # Extract features and reshape them
+        self.feature_maps = {}
+        
+        # Resize input images to 224×224 before passing to the model
+        x_resized = self.resize(x)
+        
+        _ = self.model(x_resized)  # Run forward pass with resized images
+        
+        # When processing feature maps, use original input shape for reference
         features = []
         for layer in self.hook_layers:
             if layer in self.feature_maps:
@@ -104,20 +111,7 @@ class ViTBackbone(nn.Module):
                 features.append(f)
 
         return features
-
-    def _process_feature_map(self, feature_map, input_shape):
-        """
-        Convert ViT feature map (B, N, C) into a spatial format (B, C, H, W).
-        """
-        B, N, C = feature_map.shape  # (Batch, Patches, Channels)
-        H, W = input_shape[2] // 16, input_shape[3] // 16  # Assuming 16x16 patches
-
-        # Reshape sequence (N = H * W) into (H, W)
-        feature_map = feature_map[:, 1:, :]  # Remove CLS token
-        feature_map = feature_map.permute(0, 2, 1).reshape(B, C, H, W)
-
-        return feature_map
-
+        
 class Select(nn.Module):
     def __init__(self, index):
         super(Select, self).__init__()
