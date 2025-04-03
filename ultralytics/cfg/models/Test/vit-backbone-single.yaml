@@ -13,15 +13,15 @@ backbone:
   # Extract feature maps at different scales (adjust indices based on DenseNet121's structure)
   - [0, 1, Index, [768, 3]]       # 1 Extract feature map from 3rd Transformer Block
   - [-1, 1, Conv, [768, 1, 1]]    # 2  1×1 Conv to reshape (no change in channels)
-  - [-1, 1, Interpolate, [80, 80]] #3 Resize to (80, 80)
+  - [-1, 1, Upsample, [80, 80]] #3 Resize to (80, 80)
 
   - [0, 1, Index, [768, 6]]       #4 Extract feature map from 6th Transformer Block
   - [-1, 1, Conv, [768, 1, 1]]    #5 1×1 Conv
-  - [-1, 1, Interpolate, [40, 40]] #6 Resize to (40, 40)
+  - [-1, 1, Upsample, [40, 40]] #6 Resize to (40, 40)
 
   - [0, 1, Index, [768, 11]]      #7 Extract feature map from 11th Transformer Block
   - [-1, 1, Conv, [768, 1, 1]]    #8 1×1 Conv
-  - [-1, 1, Interpolate, [20, 20]] #9 Resize to (20, 20)  
+  - [-1, 1, Upsample, [20, 20]] #9 Resize to (20, 20)  
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]] #10 (40, 40)  
   - [[-1, 6], 1, Concat, [1]]                 # 11 cat backbone P4
