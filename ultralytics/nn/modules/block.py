@@ -95,38 +95,35 @@ class ViTBackbone(nn.Module):
             self.feature_maps[layer_idx] = output  # Store output from this layer
         return hook
 
-    def _process_feature_map(self, feature_map, input_shape):
-        """
-        Convert ViT feature map (B, N, C) into a spatial format (B, C, H, W).
-        """
-        B, N, C = feature_map.shape  # (Batch, Patches, Channels)
-        H, W = input_shape[2] // 16, input_shape[3] // 16  # Assuming 16x16 patches
-
-        # Reshape sequence (N = H * W) into (H, W)
-        feature_map = feature_map[:, 1:, :]  # Remove CLS token
-        feature_map = feature_map.permute(0, 2, 1).reshape(B, C, H, W)
-
-        return feature_map
-
-    def forward(self, x):
-        """Forward pass through ViT."""
-        self.feature_maps = {}  # Reset hooks
-        
-        # Resize input images to 224×224 before passing to the model
-        x_resized = self.resize(x)
-        
-        _ = self.model(x_resized)  # Run forward pass with resized images
-        
-        # Extract features and reshape them
-        features = []
-        for layer in self.hook_layers:
-            if layer in self.feature_maps:
-                # Use original input shape for reference in processing
-                f = self._process_feature_map(self.feature_maps[layer], x.shape)
-                features.append(f)
-
-        return features
-        
+def _process_feature_map(self, feature_map, input_shape):
+    """
+    Convert ViT feature map (B, N, C) into a spatial format (B, C, H, W).
+    """
+    B, N, C = feature_map.shape  # (Batch, Patches, Channels)
+    
+    # Calculate the correct H and W based on the resized image (224x224)
+    # ViT with patch size 16 will have 14x14 patches for a 224x224 image
+    H, W = 14, 14  # For 224x224 input with 16x16 patches
+    
+    # Remove CLS token (first token)
+    feature_map = feature_map[:, 1:, :]  # Now shape is (B, 196, C) for 14x14 patches
+    
+    # Verify that the remaining tokens match expected H*W
+    if feature_map.shape[1] != H*W:
+        raise ValueError(f"Expected {H*W} tokens after CLS removal, but got {feature_map.shape[1]}")
+    
+    # Reshape to spatial format
+    feature_map = feature_map.permute(0, 2, 1).reshape(B, C, H, W)
+    
+    # Optionally resize back to match expected output dimensions based on original input
+    if input_shape[2] != 224 or input_shape[3] != 224:
+        orig_H, orig_W = input_shape[2] // 16, input_shape[3] // 16
+        feature_map = torch.nn.functional.interpolate(
+            feature_map, size=(orig_H, orig_W), mode='bilinear', align_corners=False
+        )
+    
+    return feature_map
+    
 class Select(nn.Module):
     def __init__(self, index):
         super(Select, self).__init__()
