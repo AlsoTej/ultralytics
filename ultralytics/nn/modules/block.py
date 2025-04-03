@@ -123,7 +123,76 @@ def _process_feature_map(self, feature_map, input_shape):
         )
     
     return feature_map
-    
+    class ViTBackbone(nn.Module):
+    def __init__(self, pretrained=True):
+        super().__init__()
+        self.model = vit_b_16(pretrained=pretrained)
+        
+        # Add a resize transform to ensure images are 224×224
+        self.resize = transforms.Resize((224, 224), antialias=True)
+        
+        # Hook layers: Extract features from layers 4, 8, and 12
+        self.hook_layers = [4, 8, 12]  # Transformer block indices
+        self.feature_maps = {}  # Store intermediate outputs
+
+        # Register hooks on selected transformer blocks
+        for i, block in enumerate(self.model.encoder.layers):
+            if i in self.hook_layers:
+                block.register_forward_hook(self._hook_fn(i))
+
+    def _hook_fn(self, layer_idx):
+        """Hook function to capture intermediate outputs."""
+        def hook(module, input, output):
+            self.feature_maps[layer_idx] = output  # Store output from this layer
+        return hook
+
+    def _process_feature_map(self, feature_map, input_shape):
+        """
+        Convert ViT feature map (B, N, C) into a spatial format (B, C, H, W).
+        """
+        B, N, C = feature_map.shape  # (Batch, Patches, Channels)
+        
+        # Calculate the correct H and W based on the resized image (224x224)
+        # ViT with patch size 16 will have 14x14 patches for a 224x224 image
+        H, W = 14, 14  # For 224x224 input with 16x16 patches
+        
+        # Remove CLS token (first token)
+        feature_map = feature_map[:, 1:, :]  # Now shape is (B, 196, C) for 14x14 patches
+        
+        # Reshape to spatial format
+        feature_map = feature_map.permute(0, 2, 1).reshape(B, C, H, W)
+        
+        # Optionally resize back to match expected output dimensions based on original input
+        if input_shape[2] != 224 or input_shape[3] != 224:
+            orig_H, orig_W = input_shape[2] // 16, input_shape[3] // 16
+            feature_map = torch.nn.functional.interpolate(
+                feature_map, size=(orig_H, orig_W), mode='bilinear', align_corners=False
+            )
+        
+        return feature_map
+
+    def forward(self, x):
+        """Forward pass through ViT."""
+        self.feature_maps = {}  # Reset hooks
+        
+        # Store original shape for reference
+        original_shape = x.shape
+        
+        # Resize input images to 224×224 before passing to the model
+        x_resized = self.resize(x)
+        
+        # Run forward pass with resized images
+        _ = self.model(x_resized)
+        
+        # Extract features and reshape them
+        features = []
+        for layer in self.hook_layers:
+            if layer in self.feature_maps:
+                f = self._process_feature_map(self.feature_maps[layer], original_shape)
+                features.append(f)
+
+        return features
+
 class Select(nn.Module):
     def __init__(self, index):
         super(Select, self).__init__()
