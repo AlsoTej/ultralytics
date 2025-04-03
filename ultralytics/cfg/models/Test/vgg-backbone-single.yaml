@@ -23,6 +23,6 @@ head:
 
   - [-1, 1, Conv, [512, 3, 2]]                 #14
   - [[-1, 4], 1, Concat, [1]]                 #15 cat head P5
-  - [-1, 2, C3k2, [1024, True]]                # 16 (P5/32-large)
+  - [-1, 2, C3k2, [512, True]]                # 16 (P5/32-large)
 
   - [[10, 13, 16], 1, Detect, [nc]] # 17 Detect(P3, P4, P5)
