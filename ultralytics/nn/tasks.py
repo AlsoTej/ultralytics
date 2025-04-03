@@ -88,6 +88,7 @@ from ultralytics.nn.modules import (
     BiFPNBlock,
     BiFPN,
     Select,
+    ViTBackbone,
 )
 
 from ultralytics.nn.modules.conv import BiFPN_Concat2, BiFPN_Concat3, BiFPN_Concat3_2,  DepthwiseConvBlock
