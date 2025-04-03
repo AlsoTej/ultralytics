@@ -9,7 +9,6 @@ scales: # model compound scaling constants, i.e. 'model=yolo11n.yaml' will call 
   # x: [1.00, 1.50, 512] # summary: 631 layers, 56966176 parameters, 56966160 gradients, 196.0 GFLOPs
 
 backbone:
-  backbone:
   - [-1, 1, TorchVision, [768, "vit_b_16", "DEFAULT", True, 2, True]]  # Output: [1, 768, 40, 40]
 
 head:
