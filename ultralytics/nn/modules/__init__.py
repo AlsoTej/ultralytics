@@ -73,7 +73,6 @@ from .block import (
     BiFPNBlock,
     BiFPN,
     Select,
-    ViTBackbone,
 )
 
 from .conv import (
@@ -217,5 +216,4 @@ __all__ = (
     "BiFPN",
     "Select",
     "BiFPN_Concat3_2",
-    "ViTBackbone",
 )
