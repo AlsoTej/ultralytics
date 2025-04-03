@@ -9,9 +9,9 @@ scales: # model compound scaling constants, i.e. 'model=yolo11n.yaml' will call 
 
 backbone:
   - [-1, 1, TorchVision, [512, "vgg16", "DEFAULT", True, 2, False]]
-  - [0, 1, Index, [512, 8]]  # 1 extracts 7th output (1, 512, 80, 80) - 1
-  - [0, 1, Index, [512, 11]] # 2 extracts 9th output (1, 512, 40, 40) - 2
-  - [0, 1, Index, [512, 12]] #3 extracts 11th output (1, 512, 20, 20) - 3
+  - [0, 1, Index, [512, 9]]  # 1 extracts 7th output (1, 512, 80, 80) - 1
+  - [0, 1, Index, [512, 13]] # 2 extracts 9th output (1, 512, 40, 40) - 2
+  - [0, 1, Index, [512, 17]] #3 extracts 11th output (1, 512, 20, 20) - 3
   - [-1, 1, SPPF, [512, 5]]  #4 - P5/32 (B, 512, 20, 20)
   
 head:
