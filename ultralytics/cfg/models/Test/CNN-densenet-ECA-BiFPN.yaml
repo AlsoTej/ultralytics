@@ -5,7 +5,7 @@ scales:
 backbone:
   - [-1, 1, nn.Identity, []] #0  
   # Swin track
-  - [-1, 1, TorchVision, [1024, "densenet121", "DEFAULT", True, 2, True]] #1
+  - [0, 1, TorchVision, [1024, "densenet121", "DEFAULT", True, 2, True]] #1
   # Extract feature maps at different scales (adjust indices based on DenseNet121's structure)
   - [0, 1, Index, [512, 7]]  # 2 extracts 7th output (1, 512, 80, 80) - 1
   - [0, 1, Index, [1024, 9]] # 3 extracts 9th output (1, 1024, 40, 40) - 2
@@ -31,7 +31,7 @@ backbone:
   - [[3, 12], 1, Concat, [1]] # 18 (1, 896, 40, 40) (512)
   - [-1, 1, ECA, []] #19
 
-  - [[4, 15], 1, Concat, [1]] #20 (1, 1792, 20, 20) (1024)
+  - [[5, 15], 1, Concat, [1]] #20 (1, 1792, 20, 20) (1024)
   - [-1, 1, ECA, []]  #21
 
 head:
